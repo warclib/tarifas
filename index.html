@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Tarifa de Viajes OTIMAC</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        :root { --primary: #1a1a1a; --accent: #fbc02d; --bg: #f0f2f5; --white: #ffffff; --danger: #d32f2f; --success: #2e7d32; }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background: var(--bg); color: #333; overflow-x: hidden; }
+        .hidden { display: none !important; }
+        
+        /* Login */
+        #login-screen { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; background: var(--primary); }
+        .login-card { background: #262626; padding: 40px; border-radius: 20px; width: 85%; max-width: 400px; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .login-card h2 { color: var(--accent); margin-bottom: 25px; letter-spacing: 2px; text-transform: uppercase; }
+        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: 1px solid #444; background: #333; color: white; box-sizing: border-box; font-size: 16px; }
+        .btn-main { width: 100%; padding: 15px; background: var(--accent); border: none; font-weight: bold; border-radius: 10px; cursor: pointer; font-size: 1rem; text-transform: uppercase; }
+
+        /* App Layout */
+        header { background: var(--primary); color: var(--accent); padding: 15px; text-align: center; font-weight: bold; font-size: 1.2rem; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+        .content { padding: 15px; padding-bottom: 100px; max-width: 600px; margin: auto; }
+        
+        /* Buscador Voz */
+        .voice-section { background: var(--white); padding: 25px; border-radius: 20px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        #mic-btn { width: 85px; height: 85px; border-radius: 50%; border: none; background: var(--danger); color: white; font-size: 35px; cursor: pointer; transition: 0.3s; box-shadow: 0 5px 15px rgba(211,47,47,0.3); }
+        #mic-btn.active { animation: pulse 1s infinite; background: #b71c1c; }
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.7); } 70% { transform: scale(1.1); box-shadow: 0 0 0 15px rgba(211, 47, 47, 0); } 100% { transform: scale(1); } }
+
+        /* Lista de Resultados y Admin */
+        .card { background: var(--white); padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        .dest-info { flex: 1; }
+        .dest-name { font-weight: bold; text-transform: uppercase; font-size: 0.85rem; color: #2c3e50; display: block; }
+        .price-val { color: var(--success); font-weight: 800; font-size: 1.2rem; }
+        .btn-del { background: #ff5252; color: white; border: none; padding: 8px 12px; border-radius: 8px; margin-left: 10px; cursor: pointer; }
+
+        /* Navegación Inferior */
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: var(--white); display: flex; height: 75px; border-top: 1px solid #ddd; box-shadow: 0 -3px 10px rgba(0,0,0,0.05); }
+        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; color: #666; font-size: 0.75rem; font-weight: bold; }
+        .nav-item.active { color: var(--primary); }
+        .nav-item span { font-size: 1.5rem; margin-bottom: 4px; }
+
+        /* Estilos Admin */
+        .admin-box { background: var(--white); padding: 20px; border-radius: 15px; margin-bottom: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <div class="login-card">
+            <h2>OTIMAC</h2>
+            <input type="text" id="user" placeholder="Nombre de Usuario" spellcheck="false">
+            <input type="password" id="pin" placeholder="PIN de Acceso">
+            <button class="btn-main" onclick="validarAcceso()">INGRESAR</button>
+        </div>
+    </div>
+
+    <div id="app" class="hidden">
+        <header>TARIFARIO OTIMAC</header>
+        
+        <div class="content">
+            <div id="view-search">
+                <div class="voice-section">
+                    <button id="mic-btn" onclick="iniciarVoz()">🎤</button>
+                    <p id="msg" style="margin: 15px 0 5px; font-weight: bold;">Toca el micrófono</p>
+                    <p id="heard" style="color: var(--danger); font-weight: bold; min-height: 1.2em; margin: 0;"></p>
+                </div>
+                <div id="lista-resultados"></div>
+            </div>
+
+            <div id="view-admin" class="hidden">
+                <div class="admin-box">
+                    <h3 style="margin-top:0">Agregar Nueva Ruta</h3>
+                    <input type="text" id="adm-dest" placeholder="Nombre del Destino" style="background:#f9f9f9; color:#333; border:1px solid #ddd">
+                    <input type="text" id="adm-price" placeholder="Precio (Ej: $150.00)" style="background:#f9f9f9; color:#333; border:1px solid #ddd">
+                    <button class="btn-main" onclick="guardarNuevaRuta()">GUARDAR RUTA</button>
+                </div>
+                <div id="lista-admin-total"></div>
+            </div>
+        </div>
+
+        <nav class="nav-bar">
+            <div class="nav-item active" onclick="cambiarTab('search', this)"><span>🔍</span>BUSCAR</div>
+            <div class="nav-item" id="btn-admin-nav" style="display:none" onclick="cambiarTab('admin', this)"><span>⚙️</span>ADMIN</div>
+            <div class="nav-item" onclick="location.reload()"><span>❌</span>SALIR</div>
+        </nav>
+    </div>
+
+<script>
+    // BASE DE DATOS MAESTRA
+    const DATOS_INICIALES = [
+        ["ALCHIPAHUAC (CENTRO)", "$150.00"], ["ALCHIPAHUAC (CRUCERO)", "$100.00"],
+        ["AGUA FRIA CRUCERO SRA. CHONA", "$140.00"], ["AGUA FRIA DELEGACION", "$150.00"],
+        ["AVIACION (PANTEON)", "$40.00"], ["AVIACION (ESCUELA PRIMARIA)", "$50.00"],
+        ["AVIACION (PARTE ALTA ELVIA)", "$100.00"], ["AVIACION (PARTE ALTA TANQUE)", "$130.00"],
+        ["AVIACION (SEGUNDA CALLE)", "$70.00"], ["ASERRADERO", "$100.00"],
+        ["ALTAMIRANO COLONIA UNIVERSIDAD", "$90.00"], ["BARRANCA XALE DELEGACION", "$250.00"],
+        ["BARRANCA XALE (CRUCERO CRUZTO)", "$140.00"], ["BARRANCA XALE (LICHO)", "$150.00"],
+        ["BASURERO (ASERRADERO)", "$130.00"], ["CERRO ARDILLA CRUCERO", "$50.00"],
+        ["CERRO ARDILLA (PALADIO)", "$70.00"], ["CERRO ARDILLA (ESC. PRIMARIA)", "$100.00"],
+        ["CERRO ARDILLA (DEBAJO DE LA ESCUELA)", "$100.00"], ["CRUCERO DE ILIATENCO", "$200.00"],
+        ["CRUCERO DE CASCADA", "$70.00"], ["CERRO CUATE RUMBO A LA CASCADA", "$80.00"],
+        ["CERRO CUATE (COMISARIA)", "$80.00"], ["CERRO CUATE (PUENTE ARTURO RAMOS)", "$100.00"],
+        ["CERRO CUATE (CAROLINA)", "$120.00"], ["CERRO GUAYABO", "$190.00"],
+        ["CRUZ VERDE DELEGACION", "$100.00"], ["CRUZTOMAHUAC", "$200.00"],
+        ["CERRO TEJON", "$380.00"], ["COLONIA SANCHEZ", "$300.00"],
+        ["CAÑADA SUR (DELEGACION)", "$60.00"], ["CRUZ LA VILLA (DELEGACION)", "$120.00"],
+        ["CRUZ LA VILLA (ENRIQUE)", "$100.00"], ["FLOR DE CORAZON (BENITO)", "$200.00"],
+        ["LOMA LARGA", "$90.00"], ["LOMA ENCINO (PRIMARIA)", "$70.00"],
+        ["LOMA ENCINO (DELEGACION)", "$120.00"], ["LOMA VIGAS (DELEGACION)", "$280.00"],
+        ["LOMA CUAPINOLE (DELEGACION)", "$150.00"], ["LLANO PAJARITO", "$700.00"],
+        ["OJO DE AGUA (CRUCERO)", "$50.00"], ["OJO DE AGUA (DELEGACION)", "$60.00"],
+        ["ORIENTAL (DELEGACION)", "$50.00"], ["PLAN GALEANA", "$50.00"],
+        ["PARAISO", "$80.00"], ["PLAN PORTILLO (CAPILLA)", "$320.00"],
+        ["PIEDRA BLANCA", "$200.00"], ["PASO BALLENA", "$250.00"],
+        ["PLAN CANTU", "$50.00"], ["PLAN LIMON (TERMINACION)", "$220.00"],
+        ["SAN MATEO ANTENA", "$150.00"], ["SAN MATEO PARTE ALTA", "$180.00"],
+        ["SAN ANTONIO", "$100.00"], ["SAN ISIDRO DELEGACION", "$120.00"],
+        ["SAN MARTIN DELEGACION", "$60.00"], ["SAN JUAN DEL RIO", "$180.00"],
+        ["SANTA CECILIA", "$50.00"], ["TLAHUITEPEC", "$600.00"],
+        ["TLAPA", "$2,000.00"], ["SAN LUIS ACATLAN", "$900.00"],
+        ["CHILPANCINGO", "$5,500.00"], ["ACAPULCO", "$4,500.00"],
+        ["MEXICO", "$10,000.00"], ["TLACOAPA", "$2,000.00"]
+    ];
+
+    // Persistencia de Datos
+    let baseDatos = JSON.parse(localStorage.getItem('otimac_data')) || DATOS_INICIALES;
+    const credenciales = [{u: "warclib", p: "0000", r: "admin"}, {u: "chofer", p: "1234", r: "user"}];
+
+    // SISTEMA LOGIN
+    function validarAcceso() {
+        const userVal = document.getElementById('user').value.toLowerCase().trim();
+        const pinVal = document.getElementById('pin').value.trim();
+        const found = credenciales.find(c => c.u === userVal && c.p === pinVal);
+
+        if(found) {
+            document.getElementById('login-screen').classList.add('hidden');
+            document.getElementById('app').classList.remove('hidden');
+            if(found.r === 'admin') document.getElementById('btn-admin-nav').style.display = 'flex';
+        } else {
+            alert("Credenciales incorrectas");
+        }
+    }
+
+    // VOZ Y BUSQUEDA
+    function iniciarVoz() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) return alert("Navegador no compatible con voz.");
+
+        const recognition = new SpeechRecognition();
+        recognition.lang = 'es-MX';
+        
+        recognition.onstart = () => {
+            document.getElementById('mic-btn').classList.add('active');
+            document.getElementById('msg').innerText = "Escuchando...";
+        };
+
+        recognition.onresult = (event) => {
+            const voz = event.results[0][0].transcript.toLowerCase();
+            document.getElementById('heard').innerText = `"${voz}"`;
+            ejecutarBusqueda(voz);
+        };
+
+        recognition.onend = () => {
+            document.getElementById('mic-btn').classList.remove('active');
+            document.getElementById('msg').innerText = "Toca para buscar";
+        };
+
+        recognition.start();
+    }
+
+    function ejecutarBusqueda(termino) {
+        const container = document.getElementById('lista-resultados');
+        container.innerHTML = "";
+        
+        const filtrados = baseDatos.filter(r => r[0].toLowerCase().includes(termino) || termino.includes(r[0].toLowerCase()));
+        
+        filtrados.forEach(res => {
+            container.innerHTML += `
+                <div class="card">
+                    <div class="dest-info">
+                        <span class="dest-name">${res[0]}</span>
+                    </div>
+                    <div class="price-val">${res[1]}</div>
+                </div>`;
+        });
+        
+        if(filtrados.length === 0) container.innerHTML = "<p style='text-align:center; color:#888;'>No se encontró el destino</p>";
+    }
+
+    // ADMINISTRACIÓN
+    function cambiarTab(vista, el) {
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        el.classList.add('active');
+        
+        document.getElementById('view-search').classList.toggle('hidden', vista !== 'search');
+        document.getElementById('view-admin').classList.toggle('hidden', vista !== 'admin');
+        
+        if(vista === 'admin') actualizarListaAdmin();
+    }
+
+    function actualizarListaAdmin() {
+        const container = document.getElementById('lista-admin-total');
+        container.innerHTML = "<h4>Todas las Rutas (${baseDatos.length})</h4>";
+        
+        baseDatos.forEach((r, index) => {
+            container.innerHTML += `
+                <div class="card" style="border-left-color: #666">
+                    <div class="dest-info">
+                        <span class="dest-name">${r[0]}</span>
+                        <span class="price-val" style="font-size:0.9rem">${r[1]}</span>
+                    </div>
+                    <button class="btn-del" onclick="borrarRuta(${index})">🗑️</button>
+                </div>`;
+        });
+    }
+
+    function guardarNuevaRuta() {
+        const d = document.getElementById('adm-dest').value.toUpperCase().trim();
+        const p = document.getElementById('adm-price').value.trim();
+        
+        if(d && p) {
+            baseDatos.unshift([d, p]);
+            localStorage.setItem('otimac_data', JSON.stringify(baseDatos));
+            alert("Ruta agregada correctamente");
+            document.getElementById('adm-dest').value = "";
+            document.getElementById('adm-price').value = "";
+            actualizarListaAdmin();
+        } else {
+            alert("Completa ambos campos");
+        }
+    }
+
+    function borrarRuta(index) {
+        if(confirm("¿Eliminar esta ruta definitivamente?")) {
+            baseDatos.splice(index, 1);
+            localStorage.setItem('otimac_data', JSON.stringify(baseDatos));
+            actualizarListaAdmin();
+        }
+    }
+</script>
+</body>
+</html>
