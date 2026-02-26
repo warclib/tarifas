@@ -3,32 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>OTIMAC - Tarifario Inteligente</title>
+    <title>OTIMAC - Tarifario Oficial</title>
     <style>
         :root { --primary: #1a1a1a; --accent: #fbc02d; --bg: #f0f2f5; --white: #ffffff; --danger: #d32f2f; --success: #2e7d32; }
         body { font-family: 'Segoe UI', system-ui, sans-serif; margin: 0; background: var(--bg); color: #333; }
         .hidden { display: none !important; }
         header { background: var(--primary); color: var(--accent); padding: 15px; text-align: center; font-weight: bold; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         .content { padding: 15px; padding-bottom: 100px; max-width: 600px; margin: auto; }
-        
-        /* Buscador */
         .card-box { background: var(--white); padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; text-align: center; }
         input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; background: #f9f9f9; color: #333; }
-        #mic-btn { width: 70px; height: 70px; border-radius: 50%; border: none; background: var(--danger); color: white; font-size: 28px; cursor: pointer; transition: 0.3s; box-shadow: 0 5px 15px rgba(211,47,47,0.3); }
+        #mic-btn { width: 70px; height: 70px; border-radius: 50%; border: none; background: var(--danger); color: white; font-size: 28px; cursor: pointer; box-shadow: 0 5px 15px rgba(211,47,47,0.3); }
         #mic-btn.active { animation: pulse 1s infinite; background: #b71c1c; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
-
-        /* Resultados */
         .res-card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .dest-name { font-weight: bold; text-transform: uppercase; font-size: 0.85rem; color: #2c3e50; flex: 1; }
-        .price-text { color: var(--success); font-weight: 800; font-size: 1.2rem; margin-left: 10px; }
-
-        /* Nav e Interfaz Admin */
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; height: 75px; border-top: 1px solid #ddd; box-shadow: 0 -2px 10px rgba(0,0,0,0.05); }
+        .dest-name { font-weight: bold; text-transform: uppercase; font-size: 0.8rem; color: #2c3e50; flex: 1; text-align: left; padding-right: 5px; }
+        .price-text { color: var(--success); font-weight: 800; font-size: 1.1rem; white-space: nowrap; }
+        .nav-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; height: 75px; border-top: 1px solid #ddd; }
         .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-size: 0.75rem; color: #666; font-weight: bold; }
         .nav-item span { font-size: 1.5rem; margin-bottom: 3px; }
         .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 10px; }
         .btn-accent { background: var(--accent); color: #000; }
+        .note { font-size: 0.75rem; color: #777; font-style: italic; margin-top: 10px; }
         #login-screen { height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--primary); }
     </style>
 </head>
@@ -36,7 +31,7 @@
 
     <div id="login-screen">
         <div style="background:#262626; padding:35px; border-radius:25px; width:85%; max-width:350px; text-align:center;">
-            <h2 style="color:var(--accent); letter-spacing:2px;">OTIMAC</h2>
+            <h2 style="color:var(--accent)">OTIMAC</h2>
             <input type="text" id="user" placeholder="Usuario">
             <input type="password" id="pin" placeholder="PIN">
             <button class="btn btn-accent" onclick="validar()">Ingresar</button>
@@ -46,34 +41,31 @@
     <div id="app" class="hidden">
         <header>TARIFARIO OTIMAC</header>
         <div class="content">
-            
             <div id="view-search">
                 <div class="card-box">
                     <input type="text" id="manual-input" placeholder="Escribe o usa el micro..." oninput="ejecutarFiltro(this.value)">
                     <button id="mic-btn" onclick="iniciarVoz()">🎤</button>
                     <p id="heard" style="font-size:0.85rem; color:var(--danger); margin-top:10px; font-weight:bold; min-height:1em;"></p>
+                    <div class="note">Taxi Local Centro: $40.00 | 6AM - 8PM</div>
                 </div>
                 <div id="lista-resultados"></div>
             </div>
 
             <div id="view-admin" class="hidden">
                 <div class="card-box" style="text-align:left;">
-                    <h3 style="margin-top:0">Gestión de Usuarios</h3>
+                    <h3>Gestión Choferes</h3>
                     <input type="text" id="new-u-name" placeholder="Nombre Chofer">
                     <input type="password" id="new-u-pin" placeholder="PIN Acceso">
                     <button class="btn btn-accent" onclick="crearUsuario()">Alta de Chofer</button>
-                    <div id="users-list-ui" style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;"></div>
+                    <div id="users-list-ui" style="margin-top:10px; border-top:1px solid #eee; padding-top:10px;"></div>
                 </div>
-
                 <div class="card-box" style="text-align:left;">
-                    <h3 style="margin-top:0">Añadir/Editar Ruta</h3>
+                    <h3>Agregar Ruta</h3>
                     <input type="text" id="new-r-dest" placeholder="Nombre Destino">
-                    <input type="text" id="new-r-price" placeholder="Precio ($0.00)">
-                    <button class="btn btn-accent" onclick="crearRuta()">Guardar Ruta</button>
+                    <input type="text" id="new-r-price" placeholder="Precio ($)">
+                    <button class="btn btn-accent" onclick="crearRuta()">Guardar Nueva Ruta</button>
                 </div>
-                <div id="admin-rutas-list"></div>
             </div>
-
         </div>
 
         <nav class="nav-bar">
@@ -84,22 +76,15 @@
     </div>
 
 <script>
-    // BASE DE DATOS MAESTRA (INTEGRADA)
-    const RUTAS_MAESTRAS = [
-        ["ALCHIPAHUAC (CENTRO)", "$150.00"], ["ALCHIPAHUAC (CRUCERO)", "$100.00"], ["AGUA FRIA CRUCERO SRA. CHONA", "$140.00"], ["AGUA FRIA DELEGACION", "$150.00"], ["AVIACION (PANTEON)", "$40.00"], ["AVIACION (ESCUELA)", "$50.00"], ["AVIACION (ELVIA)", "$100.00"], ["AVIACION (TANQUE)", "$130.00"], ["AVIACION (2DA CALLE)", "$70.00"], ["ASERRADERO", "$100.00"], ["ALTAMIRANO COLONIA UNIV.", "$90.00"], ["BARRANCA XALE DELEGACION", "$250.00"], ["BARRANCA XALE (CRUCERO CRUZTO)", "$140.00"], ["BARRANCA XALE (LICHO)", "$150.00"], ["BASURERO", "$130.00"], ["CERRO ARDILLA CRUCERO", "$50.00"], ["CERRO ARDILLA (ESC. PRIMARIA)", "$100.00"], ["CRUCERO DE ILIATENCO", "$200.00"], ["CRUCERO DE CASCADA", "$70.00"], ["CERRO CUATE (COMISARIA)", "$80.00"], ["CERRO CUATE (CAROLINA)", "$120.00"], ["CRUZ VERDE DELEGACION", "$100.00"], ["CRUZTOMAHUAC", "$200.00"], ["CERRO TEJON", "$380.00"], ["COLONIA SANCHEZ", "$300.00"], ["CAÑADA SUR", "$60.00"], ["CRUZ LA VILLA", "$120.00"], ["FLOR DE CORAZON", "$200.00"], ["LOMA LARGA", "$90.00"], ["LOMA ENCINO", "$120.00"], ["LOMA VIGAS", "$280.00"], ["LOMA CUAPINOLE", "$150.00"], ["LLANO PAJARITO", "$700.00"], ["OJO DE AGUA", "$60.00"], ["ORIENTAL", "$50.00"], ["PLAN GALEANA", "$50.00"], ["PARAISO", "$80.00"], ["PLAN PORTILLO", "$320.00"], ["PIEDRA BLANCA", "$200.00"], ["PASO BALLENA", "$250.00"], ["PLAN CANTU", "$50.00"], ["PLAN LIMON", "$220.00"], ["SAN MATEO ANTENA", "$150.00"], ["SAN ANTONIO", "$100.00"], ["SAN ISIDRO", "$120.00"], ["SAN MARTIN", "$60.00"], ["SAN JUAN DEL RIO", "$180.00"], ["SANTA CECILIA", "$50.00"], ["TLAHUITEPEC", "$600.00"], ["TILAPA", "$400.00"], ["PARAJE MONTERO", "$50.00"], ["TLAPA", "$2,000.00"], ["SAN LUIS ACATLAN", "$900.00"], ["OMETEPEC", "$2,000.00"], ["MARQUELIA", "$1,300.00"], ["CHILPANCINGO", "$5,500.00"], ["ACAPULCO", "$4,500.00"], ["MEXICO", "$10,000.00"], ["TLACOAPA", "$2,000.00"]
+    const DATA = [
+        ["ALCHIPAHUAC (CENTRO)","$150.00"],["ALCHIPAHUAC (CRUCERO)","$100.00"],["AGUA FRIA CRUCERO SRA. CHONA","$140.00"],["AGUA FRIA DELEGACION","$150.00"],["AVIACION (PANTEON)","$40.00"],["AVIACION (ESCUELA PRIMARIA)","$50.00"],["AVIACION (PARTE ALTA ELVIA)","$100.00"],["AVIACION (PARTE ALTA TANQUE)","$130.00"],["AVIACION (SEGUNDA CALLE ANTES DE LA ESCUELA)","$70.00"],["ASERRADERO","$100.00"],["ALTAMIRANO COLONIA UNIVERSIDAD","$90.00"],["BARRANCA XALE DELEGACION","$250.00"],["BARRANCA XALE (CRUCERO CRUZTO)","$140.00"],["BARRANCA XALE (LICHO)","$150.00"],["BASURERO (ASERRADERO)","$130.00"],["CERRO ARDILLA CRUCERO","$50.00"],["CERRO ARDILLA (PALADIO)","$70.00"],["CERRO ARDILLA (ESC. PRIMARIA)","$100.00"],["CERRO ARDILLA (DEBAJO DE LA ESCUELA)","$100.00"],["CRUCERO DE ILIATENCO","$200.00"],["CRUCERO DE CASCADA","$70.00"],["CERRO CUATE RUMBO A LA CASCADA","$80.00"],["CERRO CUATE CASCADA INTERMEDIO","$80.00"],["CERRO CUATE (COMISARIA)","$80.00"],["CERRO CUATE (PUENTE ARTURO RAMOS)","$100.00"],["CERRO CUATE (TERMINACION CAROLINA)","$120.00"],["CERRO GUAYABO","$190.00"],["CRUZ VERDE DELEGACION","$100.00"],["CRUZTOMAHUAC","$200.00"],["CERRO TEJON","$380.00"],["COLONIA SANCHEZ","$300.00"],["CAÑADA SUR (DELEGACION)","$60.00"],["CRUZ LA VILLA (DELEGACION)","$120.00"],["CRUZ LA VILLA (INTERMEDIO FELIPE)","$70.00"],["CRUZ LA VILLA (ENRIQUE)","$100.00"],["CRUCERO DE HONDURA TIGRE RUMBO (TLAHUI)","$300.00"],["FLOR DE CORAZON (DONDE BENITO)","$200.00"],["LOMA LARGA","$90.00"],["LOMA ENCINO (ESCUELA PRIMARIA)","$70.00"],["LOMA ENCINO (DELEGACION Y PARTE ALTA)","$120.00"],["LOMA VIGAS (DELEGACION)","$280.00"],["LOMA CUAPINOLE (CRUCERO)","$80.00"],["LOMA CUAPINOLE (DELEGACION, ESCUELA PRIM.)","$150.00"],["LOMA CUAPINOLE (ABEL)","$150.00"],["LOMA CUAPINOLE (DELEGACION PARTE BAJA)","$200.00"],["LLANO PAJARITO (RUMBO A TEJON)","$700.00"],["OJO DE AGUA (CRUCERO)","$50.00"],["OJO DE AGUA (PRIMARIA Y DELEGACION)","$60.00"],["ORIENTAL (DELEGACION)","$50.00"],["ORIENTAL (CAPILLA PARTE ALTA)","$100.00"],["PLAN GALEANA","$50.00"],["PLAN GALEANA (ENFRENTE TERMINACION)","$100.00"],["PLAN GALEANA (CRUCERO CRUZTO PUENTE)","$60.00"],["PARAISO","$80.00"],["PLAN PORTILLO (AL FINAL DEL CAMINO)","$350.00"],["PLAN PORTILLO (CAPILLA)","$320.00"],["PIEDRA BLANCA","$200.00"],["PASO BALLENA","$250.00"],["PLAN CANTU","$50.00"],["PLAN CANTU (DELEGACION)","$60.00"],["PORTEZUELO DEL CLARIN (CRUCERO CIRINO)","$140.00"],["PORTEZUELO DEL CLARIN (ESCUELA)","$180.00"],["PORTEZUELO DEL CLARIN (PARTE ALTA SILVESTRE)","$220.00"],["PORTEZUELO DEL CLARIN (CAPILLA)","$180.00"],["PORTEZUELO DEL CLARIN (CASA DE ADOBE)","$230.00"],["PORTEZUELO INTERMEDIO SAN MARTIN","$100.00"],["PLAN LIMON (TIMOTEO)","$180.00"],["PLAN LIMON (TERMINACION)","$220.00"],["RENACIMIENTO (ASERRADERO)","$120.00"],["SANTA CRUZ HERNANDEZ (MAXIMINO LOPEZ)","$40.00"],["SANTA CRUZ HERNANDEZ (MADRE CALIXTO)","$50.00"],["SAN MATEO ANTENA","$150.00"],["SAN MATEO PARTE ALTA","$180.00"],["SAN ANTONIO","$100.00"],["SAN ANTONIO (PLAN LUIS ESPINOBARROS)","$150.00"],["SAN ISIDRO ESC. PRIM.","$60.00"],["SAN ISIDRO (EL MANGO)","$100.00"],["SAN ISIDRO DELEGACION","$120.00"],["SAN MARTIN DELEGACION","$60.00"],["SAN MARTIN (TANQUE)","$60.00"],["SAN MARTIN (TERMINACION EUGENIA)","$70.00"],["SAN JUAN DEL RIO (DELEGACION)","$180.00"],["SAN JUAN DEL RIO (NICASIO RUIZ)","$200.00"],["SANTA CECILIA DELEGACION","$50.00"],["SANTA CECILIA PARTE ALTA","$60.00"],["SAN JOSE VISTA HERMOSA","$170.00"],["SAN MIGUEL REEDII","$200.00"],["SAN JOSE VISTA HERMOSA (ANTENA)","$250.00"],["TLAHUITEPEC","$600.00"],["TIERRA COLORADA ANEXO DE CRUZTO","$230.00"],["UNIVERSIDAD (DELEGACION)","$70.00"],["UNIVERSIDAD (ESC. PRIMARIA)","$50.00"],["UNIVERSIDAD (MIGUEL FLORES)","$120.00"],["UNIVERSIDAD (PREPARATORIA)","$50.00"],["VISTA HERMOSA","$80.00"],["VISTA HERMOSA (SRA. TAMALES)","$80.00"],["VISTA HERMOSA (SUEGRO DE CHAVA)","$100.00"],["VISTA HERMOSA TERMINACION","$120.00"],["VISTA ALEGRE (DERRUMBE)","$80.00"],["VISTA ALEGRE (DELEGACION)","$90.00"],["13 DE SEPTIEMBRE (DELEGACION)","$100.00"],["10 DE MAYO","$280.00"],["24 DE ENERO","$100.00"],["TILAPA","$400.00"],["PARAJE MONTERO","$500.00"],["3 MARIAS","$350.00"],["COLOMBIA DE GUADALUPE","$300.00"],["ESPINO BLANCO","$300.00"],["TIERRA COLORADA","$500.00"],["ATOTONILCO DE HORCASITAS","$800.00"],["SAN LUIS RENACIMIENTO","$800.00"],["PARAJE OCOTERO","$700.00"],["PASCALA DEL ORO","$900.00"],["CERRO TIMBRE","$600.00"],["TOTOMIXTLAHUACA","$1,000.00"],["SAN MIGUEL EL PROGRESO","$500.00"],["LA CIENEGA (MALINA)","$800.00"],["MALINALTEPEC","$1,000.00"],["XALPA","$1,800.00"],["XOCHIATENCO","$800.00"],["TUXTEPEC","$400.00"],["POTRERILLO CUAPINOLE","$300.00"],["POTRERILLO DEL RINCON","$400.00"],["SANTA CRUZ DEL RINCON","$500.00"],["ARROYO SAN PEDRO","$500.00"],["BUENA VISTA","$900.00"],["PUEBLO HIDALGO","$600.00"],["MESON IXTLAHUAC","$600.00"],["TLAXCALIXTLAHUACA","$1,000.00"],["RIO IGUAPA","$1,200.00"],["TLAPA","$2,000.00"],["SAN LUIS ACATLAN","$900.00"],["OMETEPEC","$2,000.00"],["MARQUELIA","$1,300.00"],["IGUALAPA","$2,000.00"],["CHILPANCINGO","$5,500.00"],["ACAPULCO","$4,500.00"],["MEXICO","$10,000.00"],["JUQUILA-OAXACA","$7,000.00"],["PUEBLA","$7,500.00"],["AYUTLA DE LOS LIBRES","$3,500.00"],["RANCHO VIEJO","$900.00"],["TLACOAPA","$2,000.00"]
     ];
 
-    let dbRutas = JSON.parse(localStorage.getItem('otimac_rutas_v3')) || RUTAS_MAESTRAS;
-    let dbUsers = JSON.parse(localStorage.getItem('otimac_users_v3')) || [{u: "warclib", p: "0000", r: "admin"}];
+    let dbRutas = JSON.parse(localStorage.getItem('ot_v4_r')) || DATA;
+    let dbUsers = JSON.parse(localStorage.getItem('ot_v4_u')) || [{u: "warclib", p: "0000", r: "admin"}];
 
-    // DICCIONARIO DE CORRECCIÓN POR VOZ (Evita errores como Crusto -> Cruzto)
-    const CORRECCIONES_VOZ = {
-        "crusto": "cruzto",
-        "crusto mahuac": "cruztomahuac",
-        "tlahui": "tlahuitepec",
-        "aviación": "aviacion",
-        "alchipa": "alchipahuac"
-    };
+    // Mapeo para mejorar la detección de voz (Similitud)
+    const VOZ_FIX = {"crusto": "cruzto", "tlahui": "tlahuitepec", "mahuac": "cruztomahuac", "iliatenco": "iliatenco"};
 
     function validar() {
         const u = document.getElementById('user').value.toLowerCase().trim();
@@ -112,94 +97,53 @@
         } else alert("Acceso Incorrecto");
     }
 
-    // BUSQUEDA INTELIGENTE
     function ejecutarFiltro(val) {
         const container = document.getElementById('lista-resultados');
         container.innerHTML = "";
-        let termino = val.toLowerCase().trim();
-
-        // Aplicar corrección de similitud
-        for (let error in CORRECCIONES_VOZ) {
-            if (termino.includes(error)) {
-                termino = termino.replace(error, CORRECCIONES_VOZ[error]);
-            }
-        }
-
-        if(termino.length < 2) return;
-
-        const res = dbRutas.filter(r => r[0].toLowerCase().includes(termino) || termino.includes(r[0].toLowerCase()));
-        
-        res.forEach(item => {
-            container.innerHTML += `<div class="res-card">
-                <span class="dest-name">${item[0]}</span>
-                <span class="price-text">${item[1]}</span>
-            </div>`;
+        let t = val.toLowerCase().trim();
+        for (let error in VOZ_FIX) { if (t.includes(error)) t = t.replace(error, VOZ_FIX[error]); }
+        if(t.length < 2) return;
+        dbRutas.filter(r => r[0].toLowerCase().includes(t) || t.includes(r[0].toLowerCase())).forEach(item => {
+            container.innerHTML += `<div class="res-card"><span class="dest-name">${item[0]}</span><span class="price-text">${item[1]}</span></div>`;
         });
     }
 
     function iniciarVoz() {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'es-MX';
-        
-        recognition.onstart = () => { 
-            document.getElementById('mic-btn').classList.add('active'); 
-            document.getElementById('heard').innerText = "Escuchando...";
+        const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        rec.lang = 'es-MX';
+        rec.onstart = () => { document.getElementById('mic-btn').classList.add('active'); document.getElementById('heard').innerText = "Escuchando..."; };
+        rec.onresult = (e) => {
+            let v = e.results[0][0].transcript.toLowerCase();
+            document.getElementById('manual-input').value = v;
+            document.getElementById('heard').innerText = `Entendí: "${v}"`;
+            ejecutarFiltro(v);
         };
-        
-        recognition.onresult = (e) => {
-            let voz = e.results[0][0].transcript.toLowerCase();
-            document.getElementById('heard').innerText = `Entendí: "${voz}"`;
-            document.getElementById('manual-input').value = voz;
-            ejecutarFiltro(voz);
-        };
-        
-        recognition.onend = () => { document.getElementById('mic-btn').classList.remove('active'); };
-        recognition.start();
+        rec.onend = () => document.getElementById('mic-btn').classList.remove('active');
+        rec.start();
     }
 
-    // ADMIN USUARIOS Y RUTAS
     function showTab(tab) {
         document.getElementById('view-search').classList.toggle('hidden', tab !== 'search');
         document.getElementById('view-admin').classList.toggle('hidden', tab !== 'admin');
-        if(tab === 'admin') actualizarUI();
-    }
-
-    function actualizarUI() {
-        const uDiv = document.getElementById('users-list-ui');
-        uDiv.innerHTML = "<strong>Choferes:</strong><br>";
-        dbUsers.forEach((user, i) => {
-            if(user.r !== 'admin') uDiv.innerHTML += `<div>${user.u} (${user.p}) <button onclick="borrarU(${i})" style="color:red; border:none; background:none; cursor:pointer;">[Eliminar]</button></div>`;
-        });
+        if(tab === 'admin') {
+            const ui = document.getElementById('users-list-ui');
+            ui.innerHTML = "<strong>Choferes Registrados:</strong><br>";
+            dbUsers.forEach((u, i) => { if(u.r !== 'admin') ui.innerHTML += `<div style="display:flex; justify-content:space-between; margin:5px 0;"><span>${u.u} (${u.p})</span><button onclick="borrarU(${i})" style="color:red;border:none;background:none;font-weight:bold;">ELIMINAR</button></div>`; });
+        }
     }
 
     function crearUsuario() {
         const n = document.getElementById('new-u-name').value.toLowerCase().trim();
         const p = document.getElementById('new-u-pin').value.trim();
-        if(n && p) {
-            dbUsers.push({u:n, p:p, r:"user"});
-            localStorage.setItem('otimac_users_v3', JSON.stringify(dbUsers));
-            actualizarUI();
-            alert("Usuario Creado");
-        }
+        if(n && p) { dbUsers.push({u:n, p:p, r:"user"}); localStorage.setItem('ot_v4_u', JSON.stringify(dbUsers)); showTab('admin'); alert("Chofer Agregado"); }
     }
 
-    function borrarU(i) {
-        dbUsers.splice(i, 1);
-        localStorage.setItem('otimac_users_v3', JSON.stringify(dbUsers));
-        actualizarUI();
-    }
+    function borrarU(i) { if(confirm("¿Quitar acceso?")) { dbUsers.splice(i, 1); localStorage.setItem('ot_v4_u', JSON.stringify(dbUsers)); showTab('admin'); } }
 
     function crearRuta() {
         const d = document.getElementById('new-r-dest').value.toUpperCase().trim();
         const p = document.getElementById('new-r-price').value.trim();
-        if(d && p) {
-            dbRutas.unshift([d, p]);
-            localStorage.setItem('otimac_rutas_v3', JSON.stringify(dbRutas));
-            alert("Ruta Guardada");
-            document.getElementById('new-r-dest').value = "";
-            document.getElementById('new-r-price').value = "";
-        }
+        if(d && p) { dbRutas.unshift([d, p]); localStorage.setItem('ot_v4_r', JSON.stringify(dbRutas)); alert("Guardado"); }
     }
 </script>
 </body>
