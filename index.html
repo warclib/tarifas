@@ -17,9 +17,11 @@
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: #333; }
         header { background: var(--primary); color: white; padding: 20px; text-align: center; font-weight: bold; font-size: 1.3rem; }
         
-        /* Aviso de Sin Internet */
-        #offline-alert { background: var(--red); color: white; text-align: center; padding: 5px; font-size: 12px; font-weight: bold; display: none; }
-        
+        /* Indicador de Estado de Línea */
+        #network-status { text-align: center; padding: 5px; font-size: 12px; font-weight: bold; color: white; transition: 0.3s; }
+        .online { background: var(--green); }
+        .offline { background: var(--red); }
+
         #status-bar { font-size: 10px; text-align: center; padding: 5px; background: #e1bee7; color: var(--primary); font-weight: bold; }
         .hidden { display: none !important; }
         .card { background: var(--white); padding: 20px; border-radius: 20px; margin: 15px; box-shadow: 0 4px 12px rgba(74, 20, 140, 0.1); }
@@ -40,7 +42,7 @@
 </head>
 <body>
 
-    <div id="offline-alert">⚠️ MODO SIN CONEXIÓN (Datos locales)</div>
+    <div id="network-status" class="online">CONECTADO - EN LÍNEA</div>
     <header>OTIMAC - ssc tsiakhe</header>
     <div id="status-bar">SISTEMA OTIMAC ACTIVO</div>
 
@@ -96,16 +98,40 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
+    
     let DATOS = {rutas:{}, usuarios:{}};
     let isAdmin = false;
     let sesionIniciada = false;
     let recognition;
     let isListening = false;
 
-    // --- DETECTOR DE INTERNET ---
-    window.addEventListener('online', () => document.getElementById('offline-alert').style.display = 'none');
-    window.addEventListener('offline', () => document.getElementById('offline-alert').style.display = 'block');
-    if(!navigator.onLine) document.getElementById('offline-alert').style.display = 'block';
+    // --- LÓGICA DE RED Y PERSISTENCIA ---
+    const statusDiv = document.getElementById('network-status');
+    
+    function updateStatus() {
+        if(navigator.onLine) {
+            statusDiv.innerText = "CONECTADO - EN LÍNEA";
+            statusDiv.className = "online";
+        } else {
+            statusDiv.innerText = "MODO SIN CONEXIÓN - DATOS LOCALES";
+            statusDiv.className = "offline";
+            const local = localStorage.getItem('backup_otimac');
+            if (local) DATOS = JSON.parse(local);
+        }
+    }
+    window.addEventListener('online', updateStatus);
+    window.addEventListener('offline', updateStatus);
+    updateStatus();
+
+    db.ref('/').on('value', (snap) => {
+        const data = snap.val();
+        if (data) {
+            DATOS = data;
+            localStorage.setItem('backup_otimac', JSON.stringify(data));
+        }
+        if(!sesionIniciada && localStorage.getItem('sesion_otimac_v1')) login(true);
+        if(isAdmin) listarChoferes();
+    });
 
     // --- SERVICE WORKER ---
     if ('serviceWorker' in navigator) {
@@ -129,19 +155,15 @@
         }
     });
 
-    // --- LÓGICA ---
-    db.ref('/').on('value', (snap) => {
-        DATOS = snap.val() || {rutas:{}, usuarios:{}};
-        if(!sesionIniciada && localStorage.getItem('sesion_otimac_v1')) login(true);
-        if(isAdmin) listarChoferes();
-    });
-
+    // --- LÓGICA APP (SIN MODIFICAR ESTRUCTURA) ---
     function login(auto = false) {
         const u = auto ? localStorage.getItem('sesion_otimac_v1') : document.getElementById('user').value.toLowerCase().trim();
         const p = auto ? localStorage.getItem('pin_otimac_v1') : document.getElementById('pin').value.trim();
+        
         isAdmin = (u === "warclib" && p === "0000");
         const usuarios = Object.values(DATOS.usuarios || {});
         const esChofer = usuarios.find(x => x.u === u && x.p === p);
+
         if (isAdmin || esChofer) {
             sesionIniciada = true;
             localStorage.setItem('sesion_otimac_v1', u);
