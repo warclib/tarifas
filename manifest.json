@@ -1,7 +1,7 @@
 {
   "name": "OTIMAC ssc tsiakhe",
   "short_name": "OTIMAC",
-  "start_url": "./index.html",
+  "start_url": "index.html",
   "display": "standalone",
   "background_color": "#4a148c",
   "theme_color": "#4a148c",
