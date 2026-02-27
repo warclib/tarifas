@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SSC TSIAKHE - OTIMAC</title>
+    <title>ssc tsiakhe - OTIMAC</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
@@ -16,22 +16,22 @@
         input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; outline: none; }
         .btn { width: 100%; padding: 15px; background: var(--accent); border: none; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.3s; margin-top: 5px; }
         .btn-admin { background: #0288d1; color: white; margin-bottom: 10px; }
+        .btn-edit { background: #444; color: white; padding: 5px 10px; font-size: 12px; border-radius: 5px; margin-top: 5px; }
         #mic-btn { width: 80px; height: 80px; border-radius: 50%; border: none; background: var(--red); color: white; font-size: 35px; cursor: pointer; display: block; margin: 15px auto; transition: 0.3s; }
         .escuchando { animation: pulse-green 1.5s infinite; background: var(--green) !important; }
         @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); } 70% { box-shadow: 0 0 0 25px rgba(76, 175, 80, 0); } 100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); } }
         .res-item { background: white; padding: 18px; margin: 10px 15px; border-radius: 12px; border-left: 8px solid var(--accent); display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
         .price { color: #2e7d32; font-size: 1.3em; }
-        #status-bar { font-size: 11px; text-align: center; padding: 5px; font-weight: bold; }
+        .dest-info { display: flex; flex-direction: column; }
     </style>
 </head>
 <body>
 
-    <header>SITIO DE TAXIS SR. SAN JOSÉ</header>
-    <div id="status-bar"></div>
+    <header>SITIO DE TAXIS OTIMAC</header>
 
     <div id="login-screen">
         <div class="card">
-            <h2 style="text-align:center; margin-top:0;">PANEL OTIMAC</h2>
+            <h2 style="text-align:center; margin-top:0;">ssc tsiakhe</h2>
             <input type="text" id="user" placeholder="Usuario">
             <input type="password" id="pin" placeholder="PIN">
             <button class="btn" onclick="login()">INGRESAR</button>
@@ -40,7 +40,7 @@
 
     <div id="app" class="hidden">
         <div id="admin-toggle" class="hidden" style="padding: 0 15px;">
-            <button class="btn btn-admin" onclick="toggleAdmin(true)">⚙️ PANEL ADMINISTRADOR</button>
+            <button class="btn btn-admin" onclick="toggleAdmin(true)">⚙️ PANEL DE CONTROL</button>
         </div>
         <div class="card">
             <input type="text" id="busqueda" placeholder="Buscar destino..." oninput="filtrar(this.value)">
@@ -51,16 +51,15 @@
 
     <div id="admin-modal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:2000; overflow-y:auto; padding:20px; box-sizing:border-box;">
         <button class="btn" onclick="toggleAdmin(false)" style="background:#666; color:white;">VOLVER AL BUSCADOR</button>
-        <h3>Gestionar Rutas</h3>
-        <p style="font-size:12px; color:gray;">Si el nombre ya existe, se actualizará el precio. Si no, se creará uno nuevo.</p>
-        <input type="text" id="new-dest" placeholder="Nombre del destino (ej: CRUZTO)">
-        <input type="text" id="new-price" placeholder="Precio (ej: $200.00)">
-        <button class="btn" onclick="guardarRuta()">GUARDAR / ACTUALIZAR</button>
+        <h3>Editar o Agregar Ruta</h3>
+        <input type="text" id="new-dest" placeholder="Nombre del destino">
+        <input type="text" id="new-price" placeholder="Precio (ej: $150.00)">
+        <button class="btn" onclick="guardarRuta()">GUARDAR CAMBIOS</button>
         <hr style="margin: 30px 0;">
-        <h3>Gestionar Choferes</h3>
-        <input type="text" id="new-chofer" placeholder="Usuario del Chofer">
+        <h3>Registrar Chofer</h3>
+        <input type="text" id="new-chofer" placeholder="Usuario Chofer">
         <input type="password" id="new-chofer-pin" placeholder="PIN">
-        <button class="btn" onclick="guardarChofer()" style="background:#444; color:white;">REGISTRAR / ACTUALIZAR CHOFER</button>
+        <button class="btn" onclick="guardarChofer()" style="background:#444; color:white;">GUARDAR CHOFER</button>
     </div>
 
 <script>
@@ -76,13 +75,14 @@
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
-    let DATOS_LOCALES = JSON.parse(localStorage.getItem('otimac_v4') || '{"rutas":{}, "usuarios":{}}');
+    let DATOS_LOCALES = {rutas:{}, usuarios:{}};
+    let isAdmin = false;
 
     db.ref('/').on('value', (snap) => {
         const data = snap.val();
         if (data) {
             DATOS_LOCALES = data;
-            localStorage.setItem('otimac_v4', JSON.stringify(data));
+            filtrar(document.getElementById('busqueda').value);
         }
     });
 
@@ -90,13 +90,13 @@
         const u = document.getElementById('user').value.toLowerCase().trim();
         const p = document.getElementById('pin').value.trim();
         const usuarios = Object.values(DATOS_LOCALES.usuarios || {});
-        const esAdmin = (u === "warclib" && p === "0000");
+        isAdmin = (u === "warclib" && p === "0000");
         const esChofer = usuarios.find(x => x.u === u && x.p === p);
 
-        if (esAdmin || esChofer) {
+        if (isAdmin || esChofer) {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('app').classList.remove('hidden');
-            if(esAdmin) document.getElementById('admin-toggle').classList.remove('hidden');
+            if(isAdmin) document.getElementById('admin-toggle').classList.remove('hidden');
             filtrar('');
         } else { alert("Acceso denegado."); }
     }
@@ -106,10 +106,29 @@
         if (t.includes("crust") || t.includes("cruzto")) t = "cruzto";
         const resContainer = document.getElementById('resultados');
         resContainer.innerHTML = "";
-        const rutas = Object.values(DATOS_LOCALES.rutas || {});
-        rutas.filter(r => r.d.toLowerCase().includes(t)).forEach(r => {
-            resContainer.innerHTML += `<div class="res-item"><span>${r.d}</span><span class="price">${r.p}</span></div>`;
+        
+        // Convertimos el objeto en array para filtrar
+        const rutasKeys = Object.keys(DATOS_LOCALES.rutas || {});
+        
+        rutasKeys.forEach(key => {
+            const r = DATOS_LOCALES.rutas[key];
+            if (r.d.toLowerCase().includes(t)) {
+                resContainer.innerHTML += `
+                    <div class="res-item">
+                        <div class="dest-info">
+                            <span>${r.d}</span>
+                            ${isAdmin ? `<button class="btn-edit" onclick="prepararEdicion('${key}', '${r.d}', '${r.p}')">EDITAR</button>` : ''}
+                        </div>
+                        <span class="price">${r.p}</span>
+                    </div>`;
+            }
         });
+    }
+
+    function prepararEdicion(id, d, p) {
+        document.getElementById('new-dest').value = d;
+        document.getElementById('new-price').value = p;
+        toggleAdmin(true);
     }
 
     function iniciarVoz() {
@@ -119,26 +138,23 @@
         recognition.onstart = () => btn.classList.add('escuchando');
         recognition.onend = () => btn.classList.remove('escuchando');
         recognition.onresult = (e) => {
-            const texto = e.results[0][0].transcript;
-            document.getElementById('busqueda').value = texto;
-            filtrar(texto);
+            document.getElementById('busqueda').value = e.results[0][0].transcript;
+            filtrar(e.results[0][0].transcript);
         };
         recognition.start();
     }
 
     function toggleAdmin(show) { document.getElementById('admin-modal').classList.toggle('hidden', !show); }
 
-    // --- SOLUCIÓN A DUPLICADOS ---
     function guardarRuta() {
         const d = document.getElementById('new-dest').value.toUpperCase().trim();
         const p = document.getElementById('new-price').value.trim();
         if(d && p) {
-            // Usamos el nombre del destino como ID para que se sobrescriba
+            // Creamos un ID basado en el nombre para evitar duplicados
             const idRuta = d.replace(/[^A-Z0-9]/g, "_"); 
             db.ref('rutas/' + idRuta).set({ d, p }).then(() => {
-                alert("Base de datos actualizada correctamente.");
-                document.getElementById('new-dest').value = "";
-                document.getElementById('new-price').value = "";
+                alert("Ruta actualizada en OTIMAC.");
+                toggleAdmin(false);
             });
         }
     }
@@ -147,11 +163,8 @@
         const u = document.getElementById('new-chofer').value.toLowerCase().trim();
         const p = document.getElementById('new-chofer-pin').value.trim();
         if(u && p) {
-            // Usamos el nombre del usuario como ID para evitar duplicar choferes
             db.ref('usuarios/' + u).set({ u, p }).then(() => {
                 alert("Chofer actualizado.");
-                document.getElementById('new-chofer').value = "";
-                document.getElementById('new-chofer-pin').value = "";
             });
         }
     }
