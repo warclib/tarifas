@@ -3,14 +3,19 @@
   "short_name": "OTIMAC",
   "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#4a148c", 
+  "background_color": "#4a148c",
   "theme_color": "#4a148c",
   "icons": [
     {
-      "src": "https://i.imgur.com/KmMpXzE.png",
-      "sizes": "512x512",
+      "src": "icono-otimac.png",
+      "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "icono-otimac.png",
+      "sizes": "512x512",
+      "type": "image/png"
     }
   ]
 }
