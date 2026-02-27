@@ -46,7 +46,7 @@
     <div id="app" class="hidden">
         <div class="card">
             <input type="text" id="busqueda" placeholder="Buscar destino..." oninput="filtrar(this.value)">
-            <button id="mic-btn" onclick="controlVoz()">🎤</button>
+            <button id="mic-btn" onclick="toggleVoz()">🎤</button>
             <p id="v-status" style="text-align:center; font-size:12px; color:#666;">Toca para hablar</p>
         </div>
         <div id="resultados"></div>
@@ -87,15 +87,8 @@
     let DATOS = {rutas:{}, usuarios:{}};
     let isAdmin = false;
     let sesionIniciada = false;
-    let usuarioActual = "";
-    let timerVoz;
-
-    function hablar(texto) {
-        window.speechSynthesis.cancel();
-        const msg = new SpeechSynthesisUtterance(texto);
-        msg.lang = 'es-MX';
-        window.speechSynthesis.speak(msg);
-    }
+    let recognition;
+    let isListening = false;
 
     db.ref('/').on('value', (snap) => {
         DATOS = snap.val() || {rutas:{}, usuarios:{}};
@@ -106,77 +99,70 @@
     function login(auto = false) {
         const u = auto ? localStorage.getItem('sesion_otimac_v1') : document.getElementById('user').value.toLowerCase().trim();
         const p = auto ? localStorage.getItem('pin_otimac_v1') : document.getElementById('pin').value.trim();
-        
         isAdmin = (u === "warclib" && p === "0000");
         const usuarios = Object.values(DATOS.usuarios || {});
         const esChofer = usuarios.find(x => x.u === u && x.p === p);
-
         if (isAdmin || esChofer) {
             sesionIniciada = true;
-            usuarioActual = u;
             localStorage.setItem('sesion_otimac_v1', u);
             localStorage.setItem('pin_otimac_v1', p);
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('app').classList.remove('hidden');
-            if(isAdmin) {
-                document.getElementById('admin-btn').classList.remove('hidden');
-                listarChoferes();
-            }
+            if(isAdmin) document.getElementById('admin-btn').classList.remove('hidden');
         } else if(!auto) alert("Acceso denegado");
     }
 
     function filtrar(term) {
         const res = document.getElementById('resultados');
         res.innerHTML = "";
-        clearTimeout(timerVoz);
-
-        if(!term || term.length < 2) {
-            window.speechSynthesis.cancel();
-            return;
-        }
-
+        if(!term || term.length < 2) return;
         const t = term.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
-        let encontrados = 0;
-
         Object.keys(DATOS.rutas || {}).forEach(key => {
             const r = DATOS.rutas[key];
             const dNorm = r.d.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
             if(dNorm.includes(t)) {
-                encontrados++;
                 res.innerHTML += `
                     <div class="res-item">
                         <div>
                             <div style="font-weight:bold">${r.d}</div>
-                            ${isAdmin ? `
-                                <button class="btn-edit" onclick="prepararEdicion('${key}', '${r.d}', '${r.p}')">EDITAR</button>
-                                <button onclick="borrarRuta('${key}')" style="color:red; border:none; background:none; font-size:10px; cursor:pointer;">ELIMINAR</button>
-                            ` : ''}
+                            ${isAdmin ? `<button class="btn-edit" onclick="prepararEdicion('${key}', '${r.d}', '${r.p}')">EDITAR</button>
+                            <button onclick="borrarRuta('${key}')" style="color:red; border:none; background:none; font-size:10px; cursor:pointer;">ELIMINAR</button>` : ''}
                         </div>
                         <div class="price">${r.p}</div>
                     </div>`;
             }
         });
-
-        if(encontrados > 0) {
-            timerVoz = setTimeout(() => {
-                hablar("Lista de precios encontrada para " + usuarioActual);
-            }, 600);
-        }
     }
 
-    function controlVoz() {
-        const recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!recognition) return;
-        const rec = new recognition();
-        rec.lang = 'es-MX';
-        rec.onstart = () => document.getElementById('mic-btn').classList.add('escuchando');
-        rec.onend = () => document.getElementById('mic-btn').classList.remove('escuchando');
-        rec.onresult = (e) => {
-            let texto = e.results[0][0].transcript;
-            document.getElementById('busqueda').value = texto;
-            filtrar(texto);
-        };
-        rec.start();
+    function toggleVoz() {
+        if (!recognition) {
+            const speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!speech) return alert("Navegador no soportado");
+            recognition = new speech();
+            recognition.lang = 'es-MX';
+            recognition.continuous = false;
+            recognition.onstart = () => {
+                isListening = true;
+                document.getElementById('mic-btn').classList.add('escuchando');
+                document.getElementById('v-status').innerText = "Escuchando... Toca para parar";
+            };
+            recognition.onend = () => {
+                isListening = false;
+                document.getElementById('mic-btn').classList.remove('escuchando');
+                document.getElementById('v-status').innerText = "Toca para hablar";
+            };
+            recognition.onresult = (e) => {
+                let texto = e.results[0][0].transcript;
+                document.getElementById('busqueda').value = texto;
+                filtrar(texto);
+            };
+        }
+
+        if (isListening) {
+            recognition.stop();
+        } else {
+            recognition.start();
+        }
     }
 
     function listarChoferes() {
@@ -185,23 +171,17 @@
         lista.innerHTML = "";
         Object.keys(DATOS.usuarios || {}).forEach(key => {
             const u = DATOS.usuarios[key];
-            lista.innerHTML += `
-                <div class="admin-list-item">
-                    <span>${u.u.toUpperCase()}</span>
-                    <button onclick="borrarChofer('${key}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:5px;">ELIMINAR</button>
-                </div>`;
+            lista.innerHTML += `<div class="admin-list-item"><span>${u.u.toUpperCase()}</span><button onclick="borrarChofer('${key}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:5px;">ELIMINAR</button></div>`;
         });
     }
 
     function toggleAdmin(s) { document.getElementById('admin-modal').classList.toggle('hidden', !s); if(s) listarChoferes(); }
-
     function prepararEdicion(id, dest, precio) {
         toggleAdmin(true);
         document.getElementById('new-dest').value = dest;
         document.getElementById('new-price').value = precio;
         document.getElementById('admin-title').innerText = "Editando Tarifa";
     }
-
     function guardarRuta() {
         const d = document.getElementById('new-dest').value.toUpperCase().trim();
         const p = document.getElementById('new-price').value.trim();
@@ -215,7 +195,6 @@
             });
         }
     }
-
     function guardarChofer() {
         const u = document.getElementById('new-chofer').value.toLowerCase().trim();
         const p = document.getElementById('new-chofer-pin').value.trim();
@@ -225,16 +204,9 @@
             document.getElementById('new-chofer-pin').value = "";
         });
     }
-
     function borrarRuta(id) { if(confirm("¿Borrar?")) db.ref('rutas/'+id).remove(); }
     function borrarChofer(id) { if(confirm("¿Quitar acceso?")) db.ref('usuarios/'+id).remove(); }
     function logout() { localStorage.clear(); location.reload(); }
-
-    if ('serviceWorker' in navigator) {
-        window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js').catch(err => console.log(err));
-        });
-    }
 </script>
 </body>
 </html>
