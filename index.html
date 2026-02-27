@@ -16,13 +16,15 @@
         input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; outline: none; }
         .btn { width: 100%; padding: 15px; background: var(--accent); border: none; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.3s; margin-top: 5px; }
         .btn-admin { background: #0288d1; color: white; margin-bottom: 10px; }
-        .btn-edit { background: #444; color: white; padding: 5px 10px; font-size: 12px; border-radius: 5px; margin-top: 5px; }
-        #mic-btn { width: 80px; height: 80px; border-radius: 50%; border: none; background: var(--red); color: white; font-size: 35px; cursor: pointer; display: block; margin: 15px auto; transition: 0.3s; }
+        .btn-edit { background: #444; color: white; padding: 8px 12px; font-size: 11px; border-radius: 6px; border: none; cursor: pointer; }
+        .btn-delete { background: var(--red); color: white; padding: 8px 12px; font-size: 11px; border-radius: 6px; border: none; cursor: pointer; }
+        #mic-btn { width: 80px; height: 80px; border-radius: 50%; border: none; background: var(--red); color: white; font-size: 35px; cursor: pointer; display: block; margin: 15px auto; transition: 0.3s; position: relative; }
         .escuchando { animation: pulse-green 1.5s infinite; background: var(--green) !important; }
         @keyframes pulse-green { 0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); } 70% { box-shadow: 0 0 0 25px rgba(76, 175, 80, 0); } 100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); } }
-        .res-item { background: white; padding: 18px; margin: 10px 15px; border-radius: 12px; border-left: 8px solid var(--accent); display: flex; justify-content: space-between; align-items: center; font-weight: bold; }
+        .res-item { background: white; padding: 18px; margin: 10px 15px; border-radius: 12px; border-left: 8px solid var(--accent); display: flex; justify-content: space-between; align-items: center; font-weight: bold; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
         .price { color: #2e7d32; font-size: 1.3em; }
-        .dest-info { display: flex; flex-direction: column; }
+        .dest-info { display: flex; flex-direction: column; gap: 8px; }
+        .admin-actions { display: flex; gap: 5px; }
     </style>
 </head>
 <body>
@@ -34,32 +36,37 @@
             <h2 style="text-align:center; margin-top:0;">ssc tsiakhe</h2>
             <input type="text" id="user" placeholder="Usuario">
             <input type="password" id="pin" placeholder="PIN">
-            <button class="btn" onclick="login()">INGRESAR</button>
+            <button class="btn" onclick="login()">INGRESAR AL SISTEMA</button>
         </div>
     </div>
 
     <div id="app" class="hidden">
         <div id="admin-toggle" class="hidden" style="padding: 0 15px;">
-            <button class="btn btn-admin" onclick="toggleAdmin(true)">⚙️ PANEL DE CONTROL</button>
+            <button class="btn btn-admin" onclick="toggleAdmin(true)">⚙️ PANEL DE ADMINISTRADOR</button>
         </div>
         <div class="card">
-            <input type="text" id="busqueda" placeholder="Buscar destino..." oninput="filtrar(this.value)">
+            <input type="text" id="busqueda" placeholder="Buscar destino (ej: Cruzto)..." oninput="filtrar(this.value)">
             <button id="mic-btn" onclick="iniciarVoz()">🎤</button>
+            <p style="text-align:center; font-size:12px; color:#666;">El micro corregirá "Crusto" por "Cruzto" automáticamente.</p>
         </div>
         <div id="resultados"></div>
     </div>
 
     <div id="admin-modal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:2000; overflow-y:auto; padding:20px; box-sizing:border-box;">
         <button class="btn" onclick="toggleAdmin(false)" style="background:#666; color:white;">VOLVER AL BUSCADOR</button>
-        <h3>Editar o Agregar Ruta</h3>
+        
+        <h3 style="border-bottom: 2px solid var(--accent); padding-bottom: 10px;">Gestionar Rutas</h3>
+        <p style="font-size: 12px; color: #666;">Para editar, busca el destino en la app y dale al botón 'EDITAR'.</p>
         <input type="text" id="new-dest" placeholder="Nombre del destino">
         <input type="text" id="new-price" placeholder="Precio (ej: $150.00)">
-        <button class="btn" onclick="guardarRuta()">GUARDAR CAMBIOS</button>
-        <hr style="margin: 30px 0;">
-        <h3>Registrar Chofer</h3>
-        <input type="text" id="new-chofer" placeholder="Usuario Chofer">
-        <input type="password" id="new-chofer-pin" placeholder="PIN">
-        <button class="btn" onclick="guardarChofer()" style="background:#444; color:white;">GUARDAR CHOFER</button>
+        <button class="btn" onclick="guardarRuta()">GUARDAR / ACTUALIZAR RUTA</button>
+        
+        <div style="margin-top: 40px;">
+            <h3 style="border-bottom: 2px solid var(--primary); padding-bottom: 10px;">Gestionar Choferes</h3>
+            <input type="text" id="new-chofer" placeholder="Nombre de Usuario">
+            <input type="password" id="new-chofer-pin" placeholder="PIN">
+            <button class="btn" onclick="guardarChofer()" style="background:#444; color:white;">REGISTRAR CHOFER</button>
+        </div>
     </div>
 
 <script>
@@ -78,6 +85,7 @@
     let DATOS_LOCALES = {rutas:{}, usuarios:{}};
     let isAdmin = false;
 
+    // Sincronización en tiempo real
     db.ref('/').on('value', (snap) => {
         const data = snap.val();
         if (data) {
@@ -90,6 +98,7 @@
         const u = document.getElementById('user').value.toLowerCase().trim();
         const p = document.getElementById('pin').value.trim();
         const usuarios = Object.values(DATOS_LOCALES.usuarios || {});
+        
         isAdmin = (u === "warclib" && p === "0000");
         const esChofer = usuarios.find(x => x.u === u && x.p === p);
 
@@ -98,26 +107,31 @@
             document.getElementById('app').classList.remove('hidden');
             if(isAdmin) document.getElementById('admin-toggle').classList.remove('hidden');
             filtrar('');
-        } else { alert("Acceso denegado."); }
+        } else { alert("Usuario o PIN incorrectos."); }
     }
 
     function filtrar(termino) {
         let t = termino.toLowerCase().trim();
+        // Corrección inteligente para Cruzto
         if (t.includes("crust") || t.includes("cruzto")) t = "cruzto";
+
         const resContainer = document.getElementById('resultados');
         resContainer.innerHTML = "";
         
-        // Convertimos el objeto en array para filtrar
-        const rutasKeys = Object.keys(DATOS_LOCALES.rutas || {});
+        const keys = Object.keys(DATOS_LOCALES.rutas || {});
         
-        rutasKeys.forEach(key => {
+        keys.forEach(key => {
             const r = DATOS_LOCALES.rutas[key];
             if (r.d.toLowerCase().includes(t)) {
                 resContainer.innerHTML += `
                     <div class="res-item">
                         <div class="dest-info">
                             <span>${r.d}</span>
-                            ${isAdmin ? `<button class="btn-edit" onclick="prepararEdicion('${key}', '${r.d}', '${r.p}')">EDITAR</button>` : ''}
+                            ${isAdmin ? `
+                                <div class="admin-actions">
+                                    <button class="btn-edit" onclick="prepararEdicion('${key}', '${r.d}', '${r.p}')">EDITAR</button>
+                                    <button class="btn-delete" onclick="borrarRuta('${key}')">BORRAR</button>
+                                </div>` : ''}
                         </div>
                         <span class="price">${r.p}</span>
                     </div>`;
@@ -125,36 +139,31 @@
         });
     }
 
+    // Funciones de Administrador
     function prepararEdicion(id, d, p) {
         document.getElementById('new-dest').value = d;
         document.getElementById('new-price').value = p;
         toggleAdmin(true);
     }
 
-    function iniciarVoz() {
-        const btn = document.getElementById('mic-btn');
-        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        recognition.lang = 'es-MX';
-        recognition.onstart = () => btn.classList.add('escuchando');
-        recognition.onend = () => btn.classList.remove('escuchando');
-        recognition.onresult = (e) => {
-            document.getElementById('busqueda').value = e.results[0][0].transcript;
-            filtrar(e.results[0][0].transcript);
-        };
-        recognition.start();
+    function borrarRuta(id) {
+        if(confirm("¿Seguro que quieres eliminar este destino de OTIMAC?")) {
+            db.ref('rutas/' + id).remove().then(() => {
+                alert("Destino eliminado.");
+            });
+        }
     }
-
-    function toggleAdmin(show) { document.getElementById('admin-modal').classList.toggle('hidden', !show); }
 
     function guardarRuta() {
         const d = document.getElementById('new-dest').value.toUpperCase().trim();
         const p = document.getElementById('new-price').value.trim();
         if(d && p) {
-            // Creamos un ID basado en el nombre para evitar duplicados
-            const idRuta = d.replace(/[^A-Z0-9]/g, "_"); 
-            db.ref('rutas/' + idRuta).set({ d, p }).then(() => {
-                alert("Ruta actualizada en OTIMAC.");
+            const idLimpio = d.replace(/[^A-Z0-9]/g, "_"); 
+            db.ref('rutas/' + idLimpio).set({ d, p }).then(() => {
+                alert("Ruta guardada/actualizada.");
                 toggleAdmin(false);
+                document.getElementById('new-dest').value = "";
+                document.getElementById('new-price').value = "";
             });
         }
     }
@@ -164,9 +173,29 @@
         const p = document.getElementById('new-chofer-pin').value.trim();
         if(u && p) {
             db.ref('usuarios/' + u).set({ u, p }).then(() => {
-                alert("Chofer actualizado.");
+                alert("Chofer registrado.");
+                document.getElementById('new-chofer').value = "";
+                document.getElementById('new-chofer-pin').value = "";
             });
         }
+    }
+
+    function toggleAdmin(show) { document.getElementById('admin-modal').classList.toggle('hidden', !show); }
+
+    function iniciarVoz() {
+        const btn = document.getElementById('mic-btn');
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'es-MX';
+        
+        recognition.onstart = () => btn.classList.add('escuchando');
+        recognition.onend = () => btn.classList.remove('escuchando');
+        
+        recognition.onresult = (e) => {
+            const result = e.results[0][0].transcript;
+            document.getElementById('busqueda').value = result;
+            filtrar(result);
+        };
+        recognition.start();
     }
 </script>
 </body>
