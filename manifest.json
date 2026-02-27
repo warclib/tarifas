@@ -3,13 +3,14 @@
   "short_name": "OTIMAC",
   "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#4a148c",
+  "background_color": "#4a148c", 
   "theme_color": "#4a148c",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/3448/3448650.png",
+      "src": "https://i.imgur.com/KmMpXzE.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
