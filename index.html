@@ -5,34 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#4a148c">
     <title>OTIMAC - ssc tsiakhe</title>
+    
     <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/512/bus.png">
+
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
+    
     <style>
         :root { --primary: #4a148c; --accent: #7b1fa2; --bg: #f3e5f5; --white: #ffffff; --red: #d32f2f; --green: #388e3c; }
         body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: #333; }
         header { background: var(--primary); color: white; padding: 20px; text-align: center; font-weight: bold; font-size: 1.3rem; }
+        
+        /* Aviso de Sin Internet */
+        #offline-alert { background: var(--red); color: white; text-align: center; padding: 5px; font-size: 12px; font-weight: bold; display: none; }
+        
         #status-bar { font-size: 10px; text-align: center; padding: 5px; background: #e1bee7; color: var(--primary); font-weight: bold; }
         .hidden { display: none !important; }
         .card { background: var(--white); padding: 20px; border-radius: 20px; margin: 15px; box-shadow: 0 4px 12px rgba(74, 20, 140, 0.1); }
         input { width: 100%; padding: 16px; margin: 10px 0; border-radius: 12px; border: 2px solid #e1bee7; box-sizing: border-box; font-size: 16px; outline: none; }
         .btn { width: 100%; padding: 16px; background: var(--primary); border: none; border-radius: 12px; color: white; font-weight: bold; font-size: 16px; cursor: pointer; }
+        
         #mic-btn { width: 80px; height: 80px; border-radius: 50%; border: none; background: var(--red); color: white; font-size: 35px; cursor: pointer; display: block; margin: 15px auto; transition: 0.3s; }
         .escuchando { background: var(--green) !important; animation: pulse-morado 1.5s infinite; }
+        
         @keyframes pulse-morado { 0% { box-shadow: 0 0 0 0 rgba(74, 20, 140, 0.7); } 70% { box-shadow: 0 0 0 25px rgba(74, 20, 140, 0); } 100% { box-shadow: 0 0 0 0 rgba(74, 20, 140, 0); } }
+        
         .res-item { background: white; padding: 18px; margin: 10px 15px; border-radius: 15px; border-left: 8px solid var(--primary); display: flex; justify-content: space-between; align-items: center; }
         .price { color: var(--green); font-size: 1.4em; font-weight: bold; }
-        .btn-edit { background: #ffa000; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; }
+        .btn-edit { background: #ffa000; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 12px; font-weight: bold; }
         .admin-list-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #eee; align-items: center; }
         .btn-install { background: var(--primary); color: white; margin: 15px; width: calc(100% - 30px); border: 2px solid #e1bee7; }
     </style>
 </head>
 <body>
 
+    <div id="offline-alert">⚠️ MODO SIN CONEXIÓN (Datos locales)</div>
     <header>OTIMAC - ssc tsiakhe</header>
     <div id="status-bar">SISTEMA OTIMAC ACTIVO</div>
 
-    <button id="install-btn" class="btn btn-install hidden">📲 INSTALAR APP</button>
+    <button id="install-btn" class="btn btn-install hidden">📲 INSTALAR APLICACIÓN</button>
 
     <div id="login-screen">
         <div class="card" style="text-align: center;">
@@ -45,13 +57,13 @@
 
     <div id="app" class="hidden">
         <div class="card">
-            <input type="text" id="busqueda" placeholder="Buscar destino..." oninput="filtrar(this.value)">
+            <input type="text" id="busqueda" placeholder="Buscar destino (Ej: Cruzto)..." oninput="filtrar(this.value)">
             <button id="mic-btn" onclick="toggleVoz()">🎤</button>
             <p id="v-status" style="text-align:center; font-size:12px; color:#666;">Toca para hablar</p>
         </div>
         <div id="resultados"></div>
         <div style="padding: 15px;">
-            <button id="admin-btn" class="btn hidden" style="background:#0288d1; margin-bottom:10px;" onclick="toggleAdmin(true)">⚙️ PANEL ADMIN</button>
+            <button id="admin-btn" class="btn hidden" style="background:#0288d1; margin-bottom:10px;" onclick="toggleAdmin(true)">⚙️ PANEL CONTROL</button>
             <button class="btn" style="background:#666;" onclick="logout()">CERRAR SESIÓN</button>
         </div>
     </div>
@@ -59,16 +71,16 @@
     <div id="admin-modal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:2000; padding:20px; overflow-y:auto; box-sizing:border-box;">
         <button class="btn" onclick="toggleAdmin(false)" style="background:#666;">VOLVER</button>
         <h3 id="admin-title">Agregar/Editar Tarifa</h3>
-        <input type="text" id="new-dest" placeholder="Destino">
+        <input type="text" id="new-dest" placeholder="Nombre del Destino">
         <input type="text" id="new-price" placeholder="Precio">
-        <button class="btn" onclick="guardarRuta()">GUARDAR RUTA</button>
+        <button class="btn" onclick="guardarRuta()">GUARDAR DATOS</button>
         <hr>
-        <h3>Choferes Registrados</h3>
+        <h3>Choferes Autorizados</h3>
         <div id="lista-choferes"></div>
         <hr>
-        <input type="text" id="new-chofer" placeholder="Nuevo Chofer">
+        <input type="text" id="new-chofer" placeholder="Nuevo Usuario">
         <input type="password" id="new-chofer-pin" placeholder="PIN">
-        <button class="btn" onclick="guardarChofer()" style="background:#444;">AGREGAR CHOFER</button>
+        <button class="btn" onclick="guardarChofer()" style="background:#444;">REGISTRAR CHOFER</button>
     </div>
 
 <script>
@@ -90,6 +102,34 @@
     let recognition;
     let isListening = false;
 
+    // --- DETECTOR DE INTERNET ---
+    window.addEventListener('online', () => document.getElementById('offline-alert').style.display = 'none');
+    window.addEventListener('offline', () => document.getElementById('offline-alert').style.display = 'block');
+    if(!navigator.onLine) document.getElementById('offline-alert').style.display = 'block';
+
+    // --- SERVICE WORKER ---
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js'); });
+    }
+
+    let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        document.getElementById('install-btn').classList.remove('hidden');
+    });
+
+    document.getElementById('install-btn').addEventListener('click', () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(() => {
+                document.getElementById('install-btn').classList.add('hidden');
+                deferredPrompt = null;
+            });
+        }
+    });
+
+    // --- LÓGICA ---
     db.ref('/').on('value', (snap) => {
         DATOS = snap.val() || {rutas:{}, usuarios:{}};
         if(!sesionIniciada && localStorage.getItem('sesion_otimac_v1')) login(true);
@@ -116,7 +156,9 @@
         const res = document.getElementById('resultados');
         res.innerHTML = "";
         if(!term || term.length < 2) return;
-        const t = term.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+        let t = term.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+        if (t.includes("crust")) t = t.replace("crust", "cruzt");
+
         Object.keys(DATOS.rutas || {}).forEach(key => {
             const r = DATOS.rutas[key];
             const dNorm = r.d.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
@@ -140,16 +182,13 @@
             if (!speech) return alert("Navegador no soportado");
             recognition = new speech();
             recognition.lang = 'es-MX';
-            recognition.continuous = false;
             recognition.onstart = () => {
                 isListening = true;
                 document.getElementById('mic-btn').classList.add('escuchando');
-                document.getElementById('v-status').innerText = "Escuchando... Toca para parar";
             };
             recognition.onend = () => {
                 isListening = false;
                 document.getElementById('mic-btn').classList.remove('escuchando');
-                document.getElementById('v-status').innerText = "Toca para hablar";
             };
             recognition.onresult = (e) => {
                 let texto = e.results[0][0].transcript;
@@ -157,12 +196,7 @@
                 filtrar(texto);
             };
         }
-
-        if (isListening) {
-            recognition.stop();
-        } else {
-            recognition.start();
-        }
+        if (isListening) recognition.stop(); else recognition.start();
     }
 
     function listarChoferes() {
@@ -171,7 +205,7 @@
         lista.innerHTML = "";
         Object.keys(DATOS.usuarios || {}).forEach(key => {
             const u = DATOS.usuarios[key];
-            lista.innerHTML += `<div class="admin-list-item"><span>${u.u.toUpperCase()}</span><button onclick="borrarChofer('${key}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:5px;">ELIMINAR</button></div>`;
+            lista.innerHTML += `<div class="admin-list-item"><span>${u.u.toUpperCase()}</span><button onclick="borrarChofer('${key}')" style="background:red; color:white; border:none; padding:5px 10px; border-radius:5px;">X</button></div>`;
         });
     }
 
@@ -191,7 +225,6 @@
                 alert("Guardado");
                 document.getElementById('new-dest').value = "";
                 document.getElementById('new-price').value = "";
-                document.getElementById('admin-title').innerText = "Agregar/Editar Tarifa";
             });
         }
     }
@@ -199,13 +232,13 @@
         const u = document.getElementById('new-chofer').value.toLowerCase().trim();
         const p = document.getElementById('new-chofer-pin').value.trim();
         if(u && p) db.ref('usuarios/'+u).set({u, p}).then(() => {
-            alert("Chofer agregado");
+            alert("Agregado");
             document.getElementById('new-chofer').value = "";
             document.getElementById('new-chofer-pin').value = "";
         });
     }
     function borrarRuta(id) { if(confirm("¿Borrar?")) db.ref('rutas/'+id).remove(); }
-    function borrarChofer(id) { if(confirm("¿Quitar acceso?")) db.ref('usuarios/'+id).remove(); }
+    function borrarChofer(id) { if(confirm("¿Quitar?")) db.ref('usuarios/'+id).remove(); }
     function logout() { localStorage.clear(); location.reload(); }
 </script>
 </body>
