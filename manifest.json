@@ -1,15 +1,8 @@
 {
-  "name": "Tarifa OTIMAC",
+  "name": "ssc tsiakhe",
   "short_name": "OTIMAC",
   "start_url": "index.html",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#212121",
-  "icons": [
-    {
-      "src": "https://cdn-icons-png.flaticon.com/512/708/708892.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
-  ]
+  "background_color": "#1a1a1a",
+  "theme_color": "#fbc02d"
 }
