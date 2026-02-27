@@ -1,8 +1,15 @@
 {
-  "name": "ssc tsiakhe",
-  "short_name": "OTIMAC",
+  "name": "SSC TSIAKHE - OTIMAC",
+  "short_name": "Taxis San Jose",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#1a1a1a",
-  "theme_color": "#fbc02d"
+  "theme_color": "#fbc02d",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3448/3448650.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
 }
