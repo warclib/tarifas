@@ -2,162 +2,88 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>SSC TSIAKHE - OTIMAC</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSC TSIAKHE</title>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <style>
-        :root { --primary: #1a1a1a; --accent: #fbc02d; --white: #ffffff; --bg: #f0f2f5; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--primary); }
-        header { background: var(--primary); color: var(--accent); padding: 15px; text-align: center; font-weight: bold; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .hidden { display: none !important; }
-        .card { background: var(--white); padding: 20px; border-radius: 15px; margin: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; outline: none; }
-        .btn { width: 100%; padding: 15px; background: var(--accent); border: none; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.3s; }
-        .btn:active { transform: scale(0.98); background: #f9a825; }
-        #mic-btn { width: 70px; height: 70px; border-radius: 50%; border: none; background: #d32f2f; color: white; font-size: 30px; cursor: pointer; display: block; margin: 10px auto; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
-        #mic-btn:disabled { background: #9e9e9e; opacity: 0.6; }
-        .res-item { background: white; padding: 15px; margin: 10px 15px; border-radius: 12px; border-left: 6px solid var(--accent); display: flex; justify-content: space-between; align-items: center; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .price { color: #2e7d32; font-size: 1.1em; }
-        #status-red { font-size: 12px; text-align: center; padding: 5px; font-weight: bold; }
+        body { font-family: sans-serif; margin: 0; background: #f0f2f5; }
+        header { background: #1a1a1a; color: #fbc02d; padding: 15px; text-align: center; font-weight: bold; }
+        .card { background: white; padding: 20px; border-radius: 15px; margin: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
+        .res-item { background: white; padding: 12px; margin: 8px 15px; border-radius: 10px; border-left: 5px solid #fbc02d; display: flex; justify-content: space-between; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
     <div id="login-screen">
-        <header>SISTEMA OTIMAC</header>
+        <header>ACCESO OTIMAC</header>
         <div class="card">
-            <h2 style="text-align:center; margin-top:0;">Bienvenido</h2>
             <input type="text" id="user" placeholder="Usuario">
             <input type="password" id="pin" placeholder="PIN">
-            <button class="btn" onclick="login()">INGRESAR AL PANEL</button>
+            <button onclick="login()" style="width:100%; padding:12px; background:#fbc02d; border:none; border-radius:8px; font-weight:bold;">INGRESAR</button>
         </div>
     </div>
 
     <div id="app" class="hidden">
-        <header>SSC TSIAKHE - BUSCADOR</header>
-        <div id="status-red">Verificando conexión...</div>
-        
-        <div class="card" style="margin-bottom:5px;">
-            <input type="text" id="busqueda" placeholder="Buscar destino (ej. Aviación)..." oninput="filtrar(this.value)">
-            <button id="mic-btn" onclick="iniciarVoz()">🎤</button>
-            <p style="text-align:center; font-size:12px; color:#666; margin:0;">Toca el micro para dictar por voz</p>
+        <header>OTIMAC - BUSCADOR</header>
+        <div class="card">
+            <input type="text" id="busqueda" placeholder="Escribe el destino..." oninput="filtrar(this.value)">
         </div>
         <div id="resultados"></div>
     </div>
 
 <script>
-    // CONFIGURACIÓN DE TU PROYECTO FIREBASE
+    // TUS DATOS DE CONFIGURACIÓN
     const firebaseConfig = {
         apiKey: "AIzaSyDKdDduhDRFsdNOiAejQBxxKN-HLv_Jd0A",
         authDomain: "otimac-277ef.firebaseapp.com",
         databaseURL: "https://otimac-277ef-default-rtdb.firebaseio.com",
         projectId: "otimac-277ef",
         storageBucket: "otimac-277ef.firebasestorage.app",
-        messagingSenderId: "20000838532",
-        appId: "1:20000838532:web:5f5c2d76abd78d7f2a03d1",
-        measurementId: "G-W6DN1JD9NJ"
+        appId: "1:20000838532:web:5f5c2d76abd78d7f2a03d1"
     };
 
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
 
-    // Cargar memoria local al iniciar
-    let DATOS_LOCALES = JSON.parse(localStorage.getItem('otimac_local_db') || '{"rutas":{}, "usuarios":{}}');
+    // Memoria Local (Offline)
+    let DATOS_LOCALES = JSON.parse(localStorage.getItem('otimac_backup') || '{"rutas":{}, "usuarios":{}}');
 
-    // CONTROL DE RED (OFFLINE/ONLINE)
-    function monitorearRed() {
-        const status = document.getElementById('status-red');
-        const btnVoz = document.getElementById('mic-btn');
-        if (navigator.onLine) {
-            status.innerText = "● CONECTADO - DATOS SINCRONIZADOS";
-            status.style.color = "green";
-            btnVoz.disabled = false;
-        } else {
-            status.innerText = "○ MODO OFFLINE - USANDO MEMORIA LOCAL";
-            status.style.color = "#e65100";
-            btnVoz.disabled = true;
-        }
-    }
-    window.addEventListener('online', monitorearRed);
-    window.addEventListener('offline', monitorearRed);
-
-    // ESCUCHAR CAMBIOS EN LA NUBE Y GUARDARLOS EN EL CELULAR
+    // Sincronizar con la nube cuando haya internet
     db.ref('/').on('value', (snap) => {
         const data = snap.val();
         if (data) {
             DATOS_LOCALES = data;
-            localStorage.setItem('otimac_local_db', JSON.stringify(data));
-            console.log("Base de datos local actualizada");
+            localStorage.setItem('otimac_backup', JSON.stringify(data));
         }
     });
 
-    // LOGIN
     function login() {
-        const uInput = document.getElementById('user').value.toLowerCase().trim();
-        const pInput = document.getElementById('pin').value.trim();
+        const u = document.getElementById('user').value.toLowerCase().trim();
+        const p = document.getElementById('pin').value.trim();
         
-        const usuariosValidos = Object.values(DATOS_LOCALES.usuarios || {});
-        
-        // Acceso maestro warclib o usuarios en base de datos
-        const esAdmin = (uInput === "warclib" && pInput === "0000");
-        const esUsuario = usuariosValidos.find(x => x.u === uInput && x.p === pInput);
+        const usuarios = Object.values(DATOS_LOCALES.usuarios || {});
+        const auth = (u === "warclib" && p === "0000") || usuarios.find(x => x.u === u && x.p === p);
 
-        if (esAdmin || esUsuario) {
+        if (auth) {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('app').classList.remove('hidden');
-            monitorearRed();
-            filtrar(''); // Carga todas las rutas al inicio
+            filtrar('');
         } else {
-            alert("Acceso denegado. Verifica tu usuario/PIN o conéctate a internet para actualizar la lista blanca.");
+            alert("Acceso denegado.");
         }
     }
 
-    // BUSCADOR INTELIGENTE (100% OFFLINE)
-    function filtrar(termino) {
-        const t = termino.toLowerCase().trim();
-        const container = document.getElementById('resultados');
-        container.innerHTML = "";
-        
+    function filtrar(t) {
+        const term = t.toLowerCase();
+        const res = document.getElementById('resultados');
+        res.innerHTML = "";
         const rutas = Object.values(DATOS_LOCALES.rutas || {});
-        
-        const filtradas = rutas.filter(r => 
-            r.d.toLowerCase().includes(t)
-        );
-
-        if (filtradas.length === 0) {
-            container.innerHTML = "<p style='text-align:center; color:#999;'>No se encontró el destino...</p>";
-            return;
-        }
-
-        filtradas.forEach(r => {
-            container.innerHTML += `
-                <div class="res-item">
-                    <span>${r.d}</span>
-                    <span class="price">${r.p}</span>
-                </div>`;
+        rutas.filter(r => r.d.toLowerCase().includes(term)).forEach(r => {
+            res.innerHTML += `<div class="res-item"><span>${r.d}</span><span style="color:green">${r.p}</span></div>`;
         });
-    }
-
-    // FUNCIÓN DE VOZ
-    function iniciarVoz() {
-        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        recognition.lang = 'es-MX';
-        recognition.start();
-
-        document.getElementById('mic-btn').style.background = "#4CAF50";
-
-        recognition.onresult = (event) => {
-            const texto = event.results[0][0].transcript;
-            document.getElementById('busqueda').value = texto;
-            filtrar(texto);
-            document.getElementById('mic-btn').style.background = "#d32f2f";
-        };
-
-        recognition.onerror = () => {
-            document.getElementById('mic-btn').style.background = "#d32f2f";
-            alert("Error al escuchar. Intenta de nuevo.");
-        };
     }
 </script>
 </body>
