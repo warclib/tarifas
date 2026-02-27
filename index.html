@@ -26,20 +26,22 @@
         .card { background: var(--white); padding: 20px; border-radius: 20px; margin: 15px; box-shadow: 0 4px 12px rgba(74, 20, 140, 0.1); }
         input { width: 100%; padding: 16px; margin: 10px 0; border-radius: 12px; border: 2px solid #e1bee7; box-sizing: border-box; font-size: 16px; outline: none; }
         .btn { width: 100%; padding: 16px; background: var(--primary); border: none; border-radius: 12px; color: white; font-weight: bold; font-size: 16px; cursor: pointer; }
-        .btn-logout { background: #666; margin-top: 20px; font-size: 14px; }
+        .btn-install { background: #ff9800; margin: 10px 15px; width: calc(100% - 30px); }
         #mic-btn { width: 80px; height: 80px; border-radius: 50%; border: none; background: var(--red); color: white; font-size: 35px; cursor: pointer; display: block; margin: 15px auto; transition: 0.3s; }
         .escuchando { background: var(--green) !important; animation: pulse-morado 1.5s infinite; }
         @keyframes pulse-morado { 0% { box-shadow: 0 0 0 0 rgba(74, 20, 140, 0.7); } 70% { box-shadow: 0 0 0 25px rgba(74, 20, 140, 0); } 100% { box-shadow: 0 0 0 0 rgba(74, 20, 140, 0); } }
         .res-item { background: white; padding: 18px; margin: 10px 15px; border-radius: 15px; border-left: 8px solid var(--primary); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
         .price { color: var(--green); font-size: 1.4em; font-weight: bold; }
+        .btn-edit { background: #ffa000; color: white; border: none; padding: 5px 10px; border-radius: 5px; margin-right: 5px; }
         .admin-list-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #ddd; }
-        .btn-del { background: var(--red); color: white; border: none; padding: 5px 10px; border-radius: 5px; }
     </style>
 </head>
 <body>
 
     <header>OTIMAC - ssc tsiakhe</header>
     <div id="status-bar">SISTEMA OTIMAC ACTIVO</div>
+
+    <button id="install-btn" class="btn btn-install hidden">INSTALAR APP</button>
 
     <div id="login-screen">
         <div class="card" style="text-align: center;">
@@ -59,16 +61,16 @@
         <div id="resultados"></div>
         <div style="padding: 15px;">
             <button id="admin-btn" class="btn hidden" style="background:#0288d1; margin-bottom:10px;" onclick="toggleAdmin(true)">⚙️ PANEL ADMIN</button>
-            <button class="btn btn-logout" onclick="logout()">CERRAR SESIÓN</button>
+            <button class="btn" style="background:#666;" onclick="logout()">CERRAR SESIÓN</button>
         </div>
     </div>
 
     <div id="admin-modal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:2000; padding:20px; overflow-y:auto; box-sizing:border-box;">
         <button class="btn" onclick="toggleAdmin(false)" style="background:#666;">VOLVER</button>
-        <h3>Tarifas</h3>
+        <h3 id="admin-title">Agregar/Editar Tarifa</h3>
         <input type="text" id="new-dest" placeholder="Destino">
         <input type="text" id="new-price" placeholder="Precio">
-        <button class="btn" onclick="guardarRuta()">GUARDAR</button>
+        <button class="btn" id="save-btn" onclick="guardarRuta()">GUARDAR RUTA</button>
         <hr>
         <h3>Choferes Registrados</h3>
         <div id="lista-choferes"></div>
@@ -94,19 +96,36 @@
     let DATOS = {rutas:{}, usuarios:{}};
     let isAdmin = false;
     let sesionIniciada = false;
+    let deferredPrompt;
+
+    // --- INSTALACIÓN PWA ---
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        document.getElementById('install-btn').classList.remove('hidden');
+    });
+
+    document.getElementById('install-btn').addEventListener('click', async () => {
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            if (outcome === 'accepted') document.getElementById('install-btn').classList.add('hidden');
+            deferredPrompt = null;
+        }
+    });
+
+    // --- VOZ ---
+    function hablar(texto) {
+        const msg = new SpeechSynthesisUtterance(texto);
+        msg.lang = 'es-MX';
+        window.speechSynthesis.speak(msg);
+    }
 
     const normalizar = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
-    // Sincronización Única y Realtime
     db.ref('/').on('value', (snap) => {
         DATOS = snap.val() || {rutas:{}, usuarios:{}};
-        localStorage.setItem('otimac_data', JSON.stringify(DATOS));
-        
-        // Solo intentamos login automático si no hemos entrado aún
-        if(!sesionIniciada && localStorage.getItem('sesion_otimac_v1')) {
-            login(true);
-        }
-        
+        if(!sesionIniciada && localStorage.getItem('sesion_otimac_v1')) login(true);
         if(isAdmin) listarChoferes();
     });
 
@@ -125,50 +144,48 @@
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('app').classList.remove('hidden');
             if(isAdmin) document.getElementById('admin-btn').classList.remove('hidden');
-        } else if(!auto) {
-            alert("Acceso denegado");
-        }
+        } else if(!auto) alert("Acceso denegado");
     }
-
-    function logout() { localStorage.clear(); location.reload(); }
 
     function filtrar(term) {
         const res = document.getElementById('resultados');
         res.innerHTML = "";
-        if(!term || term.length < 1) return;
+        if(!term || term.length < 2) return;
 
         const t = normalizar(term);
+        let encontrados = 0;
+
         Object.keys(DATOS.rutas || {}).forEach(key => {
             const r = DATOS.rutas[key];
-            const dNorm = normalizar(r.d);
-            // Lógica especial para "Cruzto" y búsqueda general
-            if(dNorm.includes(t) || (t.includes("crust") && dNorm.includes("cruzto"))) {
+            if(normalizar(r.d).includes(t) || (t.includes("crust") && r.d.includes("CRUZTO"))) {
+                encontrados++;
                 res.innerHTML += `
                     <div class="res-item">
                         <div>
                             <div style="font-weight:bold">${r.d}</div>
-                            ${isAdmin ? `<button onclick="borrarRuta('${key}')" style="color:red; border:none; background:none; font-size:10px; padding:0; cursor:pointer;">ELIMINAR</button>` : ''}
+                            ${isAdmin ? `
+                                <button class="btn-edit" onclick="prepararEdicion('${key}', '${r.d}', '${r.p}')">EDITAR</button>
+                                <button onclick="borrarRuta('${key}')" style="color:red; border:none; background:none; font-size:10px; cursor:pointer;">ELIMINAR</button>
+                            ` : ''}
                         </div>
                         <div class="price">${r.p}</div>
                     </div>`;
             }
         });
+
+        if(encontrados > 0 && term.length > 3) {
+            // Solo habla si encuentra algo y el término es suficientemente largo
+            hablar("Lista de precios encontrada");
+        }
     }
 
     function controlVoz() {
         const recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!recognition) return alert("Tu navegador no soporta búsqueda por voz.");
-        
+        if (!recognition) return alert("No soportado");
         const rec = new recognition();
         rec.lang = 'es-MX';
-        rec.onstart = () => {
-            document.getElementById('mic-btn').classList.add('escuchando');
-            document.getElementById('v-status').innerText = "Escuchando...";
-        };
-        rec.onend = () => {
-            document.getElementById('mic-btn').classList.remove('escuchando');
-            document.getElementById('v-status').innerText = "Toca para hablar";
-        };
+        rec.onstart = () => { document.getElementById('mic-btn').classList.add('escuchando'); };
+        rec.onend = () => { document.getElementById('mic-btn').classList.remove('escuchando'); };
         rec.onresult = (e) => {
             let texto = e.results[0][0].transcript;
             document.getElementById('busqueda').value = texto;
@@ -177,44 +194,48 @@
         rec.start();
     }
 
-    function toggleAdmin(s) { document.getElementById('admin-modal').classList.toggle('hidden', !s); if(s) listarChoferes(); }
-    
-    function listarChoferes() {
-        const lista = document.getElementById('lista-choferes');
-        lista.innerHTML = "";
-        Object.keys(DATOS.usuarios || {}).forEach(key => {
-            const u = DATOS.usuarios[key];
-            lista.innerHTML += `<div class="admin-list-item"><span>${u.u}</span><button class="btn-del" onclick="borrarChofer('${key}')">X</button></div>`;
-        });
-    }
+    // --- FUNCIONES ADMIN ---
+    function toggleAdmin(s) { document.getElementById('admin-modal').classList.toggle('hidden', !s); }
 
-    function borrarRuta(id) { if(confirm("¿Borrar destino?")) db.ref('rutas/'+id).remove(); }
-    function borrarChofer(id) { if(confirm("¿Quitar acceso?")) db.ref('usuarios/'+id).remove(); }
+    function prepararEdicion(id, dest, precio) {
+        toggleAdmin(true);
+        document.getElementById('new-dest').value = dest;
+        document.getElementById('new-price').value = precio;
+        document.getElementById('admin-title').innerText = "Editando: " + dest;
+    }
 
     function guardarRuta() {
         const d = document.getElementById('new-dest').value.toUpperCase().trim();
         const p = document.getElementById('new-price').value.trim();
         if(d && p) {
             const id = d.replace(/[^A-Z0-9]/g, "_");
-            db.ref('rutas/'+id).set({d, p}).then(() => { 
-                alert("Ruta guardada"); 
+            db.ref('rutas/'+id).set({d, p}).then(() => {
+                alert("Guardado correctamente");
                 document.getElementById('new-dest').value = "";
                 document.getElementById('new-price').value = "";
+                document.getElementById('admin-title').innerText = "Agregar/Editar Tarifa";
             });
         }
+    }
+
+    function listarChoferes() {
+        const lista = document.getElementById('lista-choferes');
+        lista.innerHTML = "";
+        Object.keys(DATOS.usuarios || {}).forEach(key => {
+            const u = DATOS.usuarios[key];
+            lista.innerHTML += `<div class="admin-list-item"><span>${u.u}</span><button onclick="borrarChofer('${key}')" style="background:red; color:white; border:none; border-radius:5px;">X</button></div>`;
+        });
     }
 
     function guardarChofer() {
         const u = document.getElementById('new-chofer').value.toLowerCase().trim();
         const p = document.getElementById('new-chofer-pin').value.trim();
-        if(u && p) {
-            db.ref('usuarios/'+u).set({u, p}).then(() => {
-                alert("Chofer agregado");
-                document.getElementById('new-chofer').value = "";
-                document.getElementById('new-chofer-pin').value = "";
-            });
-        }
+        if(u && p) db.ref('usuarios/'+u).set({u, p}).then(() => alert("Chofer agregado"));
     }
+
+    function borrarRuta(id) { if(confirm("¿Borrar?")) db.ref('rutas/'+id).remove(); }
+    function borrarChofer(id) { if(confirm("¿Quitar acceso?")) db.ref('usuarios/'+id).remove(); }
+    function logout() { localStorage.clear(); location.reload(); }
 </script>
 </body>
 </html>
