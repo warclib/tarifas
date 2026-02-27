@@ -22,7 +22,7 @@
         @keyframes pulse-morado { 0% { box-shadow: 0 0 0 0 rgba(74, 20, 140, 0.7); } 70% { box-shadow: 0 0 0 25px rgba(74, 20, 140, 0); } 100% { box-shadow: 0 0 0 0 rgba(74, 20, 140, 0); } }
         .res-item { background: white; padding: 18px; margin: 10px 15px; border-radius: 15px; border-left: 8px solid var(--primary); display: flex; justify-content: space-between; align-items: center; }
         .price { color: var(--green); font-size: 1.4em; font-weight: bold; }
-        .btn-edit { background: #ffa000; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        .btn-edit { background: #ffa000; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-size: 12px; }
         .admin-list-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #eee; align-items: center; }
         .btn-install { background: var(--primary); color: white; margin: 15px; width: calc(100% - 30px); border: 2px solid #e1bee7; }
     </style>
@@ -88,8 +88,10 @@
     let isAdmin = false;
     let sesionIniciada = false;
     let usuarioActual = "";
+    let timerVoz;
 
     function hablar(texto) {
+        window.speechSynthesis.cancel();
         const msg = new SpeechSynthesisUtterance(texto);
         msg.lang = 'es-MX';
         window.speechSynthesis.speak(msg);
@@ -126,7 +128,13 @@
     function filtrar(term) {
         const res = document.getElementById('resultados');
         res.innerHTML = "";
-        if(!term || term.length < 2) return;
+        clearTimeout(timerVoz);
+
+        if(!term || term.length < 2) {
+            window.speechSynthesis.cancel();
+            return;
+        }
+
         const t = term.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
         let encontrados = 0;
 
@@ -139,21 +147,26 @@
                     <div class="res-item">
                         <div>
                             <div style="font-weight:bold">${r.d}</div>
-                            ${isAdmin ? `<button class="btn-edit" onclick="prepararEdicion('${key}', '${r.d}', '${r.p}')">EDITAR</button>
-                            <button onclick="borrarRuta('${key}')" style="color:red; border:none; background:none; font-size:10px;">ELIMINAR</button>` : ''}
+                            ${isAdmin ? `
+                                <button class="btn-edit" onclick="prepararEdicion('${key}', '${r.d}', '${r.p}')">EDITAR</button>
+                                <button onclick="borrarRuta('${key}')" style="color:red; border:none; background:none; font-size:10px; cursor:pointer;">ELIMINAR</button>
+                            ` : ''}
                         </div>
                         <div class="price">${r.p}</div>
                     </div>`;
             }
         });
 
-        if(encontrados > 0 && term.length > 3) {
-            hablar("Lista de precios encontrada para " + usuarioActual);
+        if(encontrados > 0) {
+            timerVoz = setTimeout(() => {
+                hablar("Lista de precios encontrada para " + usuarioActual);
+            }, 600);
         }
     }
 
     function controlVoz() {
         const recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!recognition) return;
         const rec = new recognition();
         rec.lang = 'es-MX';
         rec.onstart = () => document.getElementById('mic-btn').classList.add('escuchando');
@@ -181,6 +194,7 @@
     }
 
     function toggleAdmin(s) { document.getElementById('admin-modal').classList.toggle('hidden', !s); if(s) listarChoferes(); }
+
     function prepararEdicion(id, dest, precio) {
         toggleAdmin(true);
         document.getElementById('new-dest').value = dest;
@@ -197,6 +211,7 @@
                 alert("Guardado");
                 document.getElementById('new-dest').value = "";
                 document.getElementById('new-price').value = "";
+                document.getElementById('admin-title').innerText = "Agregar/Editar Tarifa";
             });
         }
     }
@@ -214,6 +229,12 @@
     function borrarRuta(id) { if(confirm("¿Borrar?")) db.ref('rutas/'+id).remove(); }
     function borrarChofer(id) { if(confirm("¿Quitar acceso?")) db.ref('usuarios/'+id).remove(); }
     function logout() { localStorage.clear(); location.reload(); }
+
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js').catch(err => console.log(err));
+        });
+    }
 </script>
 </body>
 </html>
