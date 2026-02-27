@@ -3,80 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ssc tsiakhe - OTIMAC</title>
+    <meta name="theme-color" content="#4a148c">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>OTIMAC - ssc tsiakhe</title>
     <link rel="manifest" href="manifest.json">
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <style>
         :root { 
-            --primary: #4a148c; /* Morado suave profundo */
-            --accent: #9c27b0;  /* Morado más claro */
+            --primary: #4a148c; 
+            --accent: #7b1fa2; 
             --white: #ffffff; 
-            --bg: #f3e5f5;      /* Fondo lavanda muy suave */
-            --red: #d32f2f; 
-            --green: #4CAF50; 
+            --bg: #f8f4ff; 
+            --red: #c62828; 
+            --green: #2e7d32; 
         }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: #333; }
-        header { background: var(--primary); color: white; padding: 15px; text-align: center; font-weight: bold; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+        body { font-family: 'Segoe UI', Roboto, sans-serif; margin: 0; background: var(--bg); color: #333; overflow-x: hidden; }
+        header { background: var(--primary); color: white; padding: 20px; text-align: center; font-weight: bold; position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.3); font-size: 1.2rem; }
         
+        #status-bar { font-size: 10px; text-align: center; padding: 5px; background: #e1bee7; color: #4a148c; font-weight: bold; text-transform: uppercase; }
         .hidden { display: none !important; }
-        .card { background: var(--white); padding: 20px; border-radius: 15px; margin: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.08); }
         
-        #status-bar { font-size: 11px; text-align: center; padding: 4px; background: #eee; font-weight: bold; }
-        .online { color: var(--green); }
-        .offline { color: #f57c00; }
-
-        input { width: 100%; padding: 14px; margin: 10px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; outline: none; }
-        .btn { width: 100%; padding: 14px; background: var(--accent); border: none; border-radius: 10px; color: white; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.2s; }
-        .btn-logout { background: #666; font-size: 12px; padding: 8px; margin-top: 10px; }
+        .card { background: var(--white); padding: 20px; border-radius: 20px; margin: 15px; box-shadow: 0 6px 15px rgba(74, 20, 140, 0.1); }
         
-        #mic-btn { width: 75px; height: 75px; border-radius: 50%; border: none; background: var(--red); color: white; font-size: 30px; cursor: pointer; display: block; margin: 10px auto; transition: 0.3s; }
-        .escuchando { animation: pulse-purple 1.5s infinite; background: var(--green) !important; }
-        @keyframes pulse-purple { 0% { box-shadow: 0 0 0 0 rgba(156, 39, 176, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(156, 39, 176, 0); } 100% { box-shadow: 0 0 0 0 rgba(156, 39, 176, 0); } }
+        input { width: 100%; padding: 16px; margin: 10px 0; border-radius: 12px; border: 2px solid #e1bee7; box-sizing: border-box; font-size: 16px; outline: none; transition: 0.3s; }
+        input:focus { border-color: var(--accent); }
+        
+        .btn { width: 100%; padding: 16px; background: var(--primary); border: none; border-radius: 12px; color: white; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.3s; margin-top: 5px; }
+        .btn:active { transform: scale(0.96); }
+        .btn-logout { background: #555; margin-top: 20px; font-size: 14px; }
 
-        .res-item { background: white; padding: 15px; margin: 8px 12px; border-radius: 10px; border-left: 6px solid var(--accent); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
-        .price { color: var(--primary); font-size: 1.2em; font-weight: bold; }
-        .btn-opt { padding: 6px 10px; font-size: 10px; border-radius: 5px; border: none; color: white; cursor: pointer; margin-right: 4px; }
+        /* Micrófono */
+        .mic-container { text-align: center; margin: 10px 0; }
+        #mic-btn { width: 85px; height: 85px; border-radius: 50%; border: none; background: var(--red); color: white; font-size: 35px; cursor: pointer; transition: 0.4s; box-shadow: 0 4px 15px rgba(198, 40, 40, 0.4); }
+        .escuchando { background: var(--green) !important; animation: pulse-purple 1.5s infinite; transform: scale(1.1); }
+        
+        @keyframes pulse-purple { 
+            0% { box-shadow: 0 0 0 0 rgba(46, 125, 50, 0.7); } 
+            70% { box-shadow: 0 0 0 25px rgba(46, 125, 50, 0); } 
+            100% { box-shadow: 0 0 0 0 rgba(46, 125, 50, 0); } 
+        }
+
+        /* Resultados */
+        .res-item { background: white; padding: 18px; margin: 12px; border-radius: 15px; border-left: 8px solid var(--primary); display: flex; justify-content: space-between; align-items: center; box-shadow: 0 3px 8px rgba(0,0,0,0.06); }
+        .dest-info { display: flex; flex-direction: column; gap: 5px; }
+        .price { color: var(--green); font-size: 1.4em; font-weight: 800; }
+        
+        /* Lista Admin */
+        .admin-list-item { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #eee; font-size: 14px; }
+        .btn-small-del { background: var(--red); color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; }
+        .btn-small-edit { background: var(--primary); color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-right: 5px; }
     </style>
 </head>
 <body>
 
-    <header>SITIO DE TAXIS OTIMAC</header>
-    <div id="status-bar">Cargando sistema...</div>
+    <header>OTIMAC - ssc tsiakhe</header>
+    <div id="status-bar">Verificando conexión...</div>
 
     <div id="login-screen">
         <div class="card" style="text-align: center;">
-            <h2 style="color: var(--primary);">ssc tsiakhe</h2>
+            <h2 style="color: var(--primary); margin-bottom: 25px;">CONTROL DE ACCESO</h2>
             <input type="text" id="user" placeholder="Usuario">
             <input type="password" id="pin" placeholder="PIN">
-            <button class="btn" onclick="login()">ENTRAR</button>
+            <button class="btn" onclick="login()">ENTRAR AL SISTEMA</button>
         </div>
     </div>
 
     <div id="app" class="hidden">
         <div class="card">
-            <input type="text" id="busqueda" placeholder="¿A dónde vas?" oninput="filtrar(this.value)">
-            <button id="mic-btn" onclick="iniciarVoz()">🎤</button>
+            <input type="text" id="busqueda" placeholder="Escribe el destino..." oninput="filtrar(this.value)">
+            <div class="mic-container">
+                <button id="mic-btn" onclick="controlVoz()">🎤</button>
+                <p id="mic-status" style="font-size: 12px; margin-top: 8px; color: #666;">Toca para hablar</p>
+            </div>
         </div>
         <div id="resultados"></div>
         
-        <div style="padding: 15px;">
-            <button id="admin-btn" class="btn hidden" style="background:#0288d1; margin-bottom:10px;" onclick="toggleAdmin(true)">⚙️ PANEL CONTROL</button>
+        <div style="padding: 0 15px 30px 15px;">
+            <button id="admin-btn" class="btn hidden" style="background:#0288d1;" onclick="toggleAdmin(true)">⚙️ PANEL ADMINISTRADOR</button>
             <button class="btn btn-logout" onclick="logout()">CERRAR SESIÓN</button>
         </div>
     </div>
 
     <div id="admin-modal" class="hidden" style="position:fixed; top:0; left:0; width:100%; height:100%; background:white; z-index:2000; padding:20px; overflow-y:auto; box-sizing:border-box;">
-        <button class="btn" onclick="toggleAdmin(false)" style="background:#666;">VOLVER</button>
-        <h3>Rutas y Precios</h3>
-        <input type="text" id="new-dest" placeholder="Nombre Destino">
-        <input type="text" id="new-price" placeholder="Precio (Ej: $150)">
+        <button class="btn" onclick="toggleAdmin(false)" style="background:#666;">✕ CERRAR PANEL</button>
+        
+        <h3 style="color: var(--primary); border-bottom: 2px solid var(--primary);">Gestión de Tarifas</h3>
+        <input type="text" id="new-dest" placeholder="Nombre Destino (Ej: CRUZTO)">
+        <input type="text" id="new-price" placeholder="Precio (Ej: $150.00)">
         <button class="btn" onclick="guardarRuta()">GUARDAR / ACTUALIZAR</button>
-        <hr>
-        <h3>Choferes</h3>
-        <input type="text" id="new-chofer" placeholder="Usuario">
-        <input type="password" id="new-chofer-pin" placeholder="PIN">
-        <button class="btn" onclick="guardarChofer()" style="background:#444;">AGREGAR CHOFER</button>
+        
+        <h3 style="color: var(--primary); border-bottom: 2px solid var(--primary); margin-top: 40px;">Gestión de Choferes</h3>
+        <input type="text" id="new-chofer" placeholder="Nombre Chofer">
+        <input type="password" id="new-chofer-pin" placeholder="PIN de acceso">
+        <button class="btn" onclick="guardarChofer()" style="background:#444;">REGISTRAR CHOFER</button>
+        
+        <div id="lista-choferes-admin" style="margin-top: 20px;">
+            </div>
     </div>
 
 <script>
@@ -94,108 +117,154 @@
     const db = firebase.database();
     let DATOS = {rutas:{}, usuarios:{}};
     let isAdmin = false;
+    let recognition;
 
-    // QUITAR ACENTOS
-    const normalizar = (str) => str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    // NORMALIZAR TEXTO (SIN ACENTOS)
+    const limpiarTexto = (s) => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 
     // ESTADO DE RED
-    function checkNet() {
-        const s = document.getElementById('status-bar');
-        if(navigator.onLine) { s.className="online"; s.innerText="● CONECTADO (TIEMPO REAL)"; }
-        else { s.className="offline"; s.innerText="○ MODO OFFLINE (USANDO MEMORIA LOCAL)"; }
+    function updateNet() {
+        const bar = document.getElementById('status-bar');
+        if(navigator.onLine) { bar.style.background="#e1bee7"; bar.innerText="● OTIMAC EN LÍNEA"; }
+        else { bar.style.background="#ffccbc"; bar.innerText="○ MODO OFFLINE (Buscador Activo)"; }
     }
-    window.addEventListener('online', checkNet);
-    window.addEventListener('offline', checkNet);
-    checkNet();
+    window.addEventListener('online', updateNet);
+    window.addEventListener('offline', updateNet);
+    updateNet();
 
-    // SINCRONIZACIÓN Y SESIÓN PERSISTENTE
+    // CARGA DE DATOS Y SESIÓN
     db.ref('/').on('value', (snap) => {
         DATOS = snap.val() || {rutas:{}, usuarios:{}};
-        localStorage.setItem('otimac_cache', JSON.stringify(DATOS));
-        if(localStorage.getItem('sesion_otimac')) login(true);
+        localStorage.setItem('otimac_v5', JSON.stringify(DATOS));
+        if(localStorage.getItem('sesion_activa')) login(true);
+        if(isAdmin) listarChoferesAdmin();
     });
 
     function login(auto = false) {
-        const u = auto ? localStorage.getItem('sesion_otimac') : document.getElementById('user').value.toLowerCase().trim();
-        const p = auto ? localStorage.getItem('pin_otimac') : document.getElementById('pin').value.trim();
+        const u = auto ? localStorage.getItem('sesion_activa') : document.getElementById('user').value.toLowerCase().trim();
+        const p = auto ? localStorage.getItem('sesion_pin') : document.getElementById('pin').value.trim();
         
-        const usuarios = Object.values(DATOS.usuarios || {});
         isAdmin = (u === "warclib" && p === "0000");
+        const usuarios = Object.values(DATOS.usuarios || {});
         const esChofer = usuarios.find(x => x.u === u && x.p === p);
 
         if (isAdmin || esChofer) {
-            localStorage.setItem('sesion_otimac', u);
-            localStorage.setItem('pin_otimac', p);
+            localStorage.setItem('sesion_activa', u);
+            localStorage.setItem('sesion_pin', p);
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('app').classList.remove('hidden');
             if(isAdmin) document.getElementById('admin-btn').classList.remove('hidden');
-            filtrar('');
-        } else if(!auto) { alert("Datos incorrectos"); }
+        } else if(!auto) { alert("Credenciales incorrectas."); }
     }
 
-    function logout() {
-        localStorage.clear();
-        location.reload();
-    }
+    function logout() { localStorage.clear(); location.reload(); }
 
+    // BUSCADOR (INICIA VACÍO)
     function filtrar(term) {
-        const t = normalizar(term);
         const res = document.getElementById('resultados');
         res.innerHTML = "";
-        
+        if(!term || term.trim() === "") return;
+
+        const t = limpiarTexto(term);
         Object.keys(DATOS.rutas || {}).forEach(key => {
             const r = DATOS.rutas[key];
-            if(normalizar(r.d).includes(t)) {
+            if(limpiarTexto(r.d).includes(t) || (t.includes("crust") && r.d.includes("CRUZTO"))) {
                 res.innerHTML += `
                     <div class="res-item">
-                        <div>
-                            <div style="font-weight:bold">${r.d}</div>
-                            ${isAdmin ? `
-                                <button class="btn-opt" style="background:#666" onclick="prepararEdicion('${key}','${r.d}','${r.p}')">EDITAR</button>
-                                <button class="btn-opt" style="background:var(--red)" onclick="borrarRuta('${key}')">BORRAR</button>
-                            ` : ''}
+                        <div class="dest-info">
+                            <span style="font-size:1.1rem">${r.d}</span>
+                            ${isAdmin ? `<div>
+                                <button class="btn-small-edit" onclick="prepararEdicion('${key}','${r.d}','${r.p}')">EDITAR</button>
+                                <button class="btn-small-del" onclick="borrarRuta('${key}')">BORRAR</button>
+                            </div>` : ''}
                         </div>
-                        <div class="price">${r.p}</div>
+                        <span class="price">${r.p}</span>
                     </div>`;
             }
         });
     }
 
-    function iniciarVoz() {
-        const btn = document.getElementById('mic-btn');
-        const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        rec.lang = 'es-MX';
-        rec.onstart = () => btn.classList.add('escuchando');
-        rec.onend = () => btn.classList.remove('escuchando');
-        rec.onresult = (e) => {
+    // CONTROL DE VOZ INTELIGENTE
+    function controlVoz() {
+        if (!('webkitSpeechRecognition' in window)) return alert("Tu navegador no soporta voz.");
+        
+        if (recognition && recognition.active) {
+            recognition.stop();
+            return;
+        }
+
+        recognition = new webkitSpeechRecognition();
+        recognition.lang = 'es-MX';
+        recognition.onstart = () => {
+            document.getElementById('mic-btn').classList.add('escuchando');
+            document.getElementById('mic-status').innerText = "Escuchando...";
+        };
+        recognition.onend = () => {
+            document.getElementById('mic-btn').classList.remove('escuchando');
+            document.getElementById('mic-status').innerText = "Toca para hablar";
+        };
+        recognition.onresult = (e) => {
             let texto = e.results[0][0].transcript;
-            if(normalizar(texto).includes("crust")) texto = "Cruzto";
+            // Corrección inmediata de "Cruzto"
+            if(limpiarTexto(texto).includes("crust")) texto = "Cruzto";
             document.getElementById('busqueda').value = texto;
             filtrar(texto);
         };
-        rec.start();
+        recognition.start();
     }
 
     // FUNCIONES ADMIN
-    function toggleAdmin(s) { document.getElementById('admin-modal').classList.toggle('hidden', !s); }
-    function prepararEdicion(id, d, p) { 
-        document.getElementById('new-dest').value = d; 
-        document.getElementById('new-price').value = p; 
-        toggleAdmin(true); 
+    function toggleAdmin(s) { 
+        document.getElementById('admin-modal').classList.toggle('hidden', !s);
+        if(s) listarChoferesAdmin();
     }
-    function borrarRuta(id) { if(confirm("¿Borrar?")) db.ref('rutas/'+id).remove(); }
+
+    function listarChoferesAdmin() {
+        const lista = document.getElementById('lista-choferes-admin');
+        lista.innerHTML = "<h4>Choferes registrados:</h4>";
+        Object.keys(DATOS.usuarios || {}).forEach(key => {
+            const u = DATOS.usuarios[key];
+            lista.innerHTML += `
+                <div class="admin-list-item">
+                    <span>👤 ${u.u} (PIN: ${u.p})</span>
+                    <button class="btn-small-del" onclick="borrarChofer('${key}')">Eliminar</button>
+                </div>`;
+        });
+    }
+
+    function prepararEdicion(id, d, p) {
+        document.getElementById('new-dest').value = d;
+        document.getElementById('new-price').value = p;
+        toggleAdmin(true);
+    }
+
+    function borrarRuta(id) { if(confirm("¿Eliminar tarifa?")) db.ref('rutas/'+id).remove(); }
+    function borrarChofer(id) { if(confirm("¿Eliminar acceso a este chofer?")) db.ref('usuarios/'+id).remove(); }
+
     function guardarRuta() {
         const d = document.getElementById('new-dest').value.toUpperCase().trim();
         const p = document.getElementById('new-price').value.trim();
         if(d && p) {
             const id = d.replace(/[^A-Z0-9]/g, "_");
-            db.ref('rutas/'+id).set({d, p}).then(() => { toggleAdmin(false); alert("¡Guardado!"); });
+            db.ref('rutas/'+id).set({d, p}).then(() => {
+                alert("Tarifa actualizada");
+                toggleAdmin(false);
+                document.getElementById('new-dest').value = "";
+                document.getElementById('new-price').value = "";
+            });
         }
     }
+
     function guardarChofer() {
         const u = document.getElementById('new-chofer').value.toLowerCase().trim();
         const p = document.getElementById('new-chofer-pin').value.trim();
-        if(u && p) db.ref('usuarios/'+u).set({u, p}).then(() => alert("Chofer listo"));
+        if(u && p) {
+            db.ref('usuarios/'+u).set({u, p}).then(() => {
+                alert("Chofer registrado correctamente");
+                document.getElementById('new-chofer').value = "";
+                document.getElementById('new-chofer-pin').value = "";
+            });
+        }
     }
 </script>
 </body>
