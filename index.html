@@ -3,183 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>OTIMAC - SISTEMA INTEGRAL</title>
-    
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="OTIMAC">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/708/708892.png">
-
+    <title>SSC TSIAKHE - OTIMAC</title>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
     <style>
-        :root { --primary: #1a1a1a; --accent: #fbc02d; --bg: #f0f2f5; --white: #ffffff; --danger: #d32f2f; --success: #2e7d32; }
-        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: #333; }
-        .hidden { display: none !important; }
+        :root { --primary: #1a1a1a; --accent: #fbc02d; --white: #ffffff; --bg: #f0f2f5; }
+        body { font-family: 'Segoe UI', sans-serif; margin: 0; background: var(--bg); color: var(--primary); }
         header { background: var(--primary); color: var(--accent); padding: 15px; text-align: center; font-weight: bold; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .content { padding: 15px; padding-bottom: 100px; max-width: 600px; margin: auto; }
-        .card-box { background: var(--white); padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 20px; text-align: center; }
-        input { width: 100%; padding: 12px; margin: 8px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
-        #mic-btn { width: 70px; height: 70px; border-radius: 50%; border: none; background: var(--danger); color: white; font-size: 28px; cursor: pointer; box-shadow: 0 5px 15px rgba(211,47,47,0.3); margin-bottom: 10px; }
-        .res-card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; border-left: 6px solid var(--accent); box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .dest-name { font-weight: bold; text-transform: uppercase; font-size: 0.8rem; text-align: left; flex: 1; }
-        .price-text { color: var(--success); font-weight: 800; font-size: 1.1rem; }
-        .nav-bar { position: fixed; bottom: 0; width: 100%; background: white; display: flex; height: 75px; border-top: 1px solid #ddd; z-index: 1000; }
-        .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-size: 0.75rem; color: #666; font-weight: bold; }
-        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 10px; }
-        .btn-accent { background: var(--accent); color: #000; }
-        .user-row { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
-        #login-screen { height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--primary); position: fixed; width: 100%; z-index: 2000; }
+        .hidden { display: none !important; }
+        .card { background: var(--white); padding: 20px; border-radius: 15px; margin: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        input { width: 100%; padding: 15px; margin: 10px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; outline: none; }
+        .btn { width: 100%; padding: 15px; background: var(--accent); border: none; border-radius: 10px; font-weight: bold; font-size: 16px; cursor: pointer; transition: 0.3s; }
+        .btn:active { transform: scale(0.98); background: #f9a825; }
+        #mic-btn { width: 70px; height: 70px; border-radius: 50%; border: none; background: #d32f2f; color: white; font-size: 30px; cursor: pointer; display: block; margin: 10px auto; box-shadow: 0 4px 10px rgba(0,0,0,0.2); }
+        #mic-btn:disabled { background: #9e9e9e; opacity: 0.6; }
+        .res-item { background: white; padding: 15px; margin: 10px 15px; border-radius: 12px; border-left: 6px solid var(--accent); display: flex; justify-content: space-between; align-items: center; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .price { color: #2e7d32; font-size: 1.1em; }
+        #status-red { font-size: 12px; text-align: center; padding: 5px; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div id="login-screen">
-        <div style="background:#262626; padding:35px; border-radius:25px; width:85%; max-width:350px; text-align:center;">
-            <h2 style="color:var(--accent)">OTIMAC</h2>
+        <header>SISTEMA OTIMAC</header>
+        <div class="card">
+            <h2 style="text-align:center; margin-top:0;">Bienvenido</h2>
             <input type="text" id="user" placeholder="Usuario">
             <input type="password" id="pin" placeholder="PIN">
-            <button class="btn btn-accent" onclick="validar()">Ingresar</button>
-            <p id="login-status" style="color:white; font-size:0.7rem; margin-top:10px;"></p>
+            <button class="btn" onclick="login()">INGRESAR AL PANEL</button>
         </div>
     </div>
 
     <div id="app" class="hidden">
-        <header>TARIFARIO OTIMAC - SSC TSIAKHE</header>
-        <div class="content">
-            
-            <div id="view-search">
-                <div class="card-box">
-                    <input type="text" id="manual-input" placeholder="Buscar destino..." oninput="ejecutarFiltro(this.value)">
-                    <button id="mic-btn" onclick="iniciarVoz()">🎤</button>
-                    <p id="heard" style="font-size:0.85rem; color:var(--danger); font-weight:bold;"></p>
-                </div>
-                <div id="lista-resultados"></div>
-            </div>
-
-            <div id="view-admin" class="hidden">
-                <div class="card-box" style="text-align:left;">
-                    <h3>Choferes (Lista Blanca)</h3>
-                    <input type="text" id="new-u-name" placeholder="Nombre">
-                    <input type="text" id="new-u-pin" placeholder="PIN">
-                    <button class="btn btn-accent" onclick="gestionarNube('user-add')">Dar de Alta</button>
-                    <div id="users-list-ui"></div>
-                </div>
-
-                <div class="card-box" style="text-align:left;">
-                    <h3>Modificar Tarifas</h3>
-                    <input type="text" id="new-r-dest" placeholder="Destino">
-                    <input type="text" id="new-r-price" placeholder="Precio">
-                    <button class="btn btn-accent" onclick="gestionarNube('route-add')">Guardar Cambio</button>
-                </div>
-            </div>
+        <header>SSC TSIAKHE - BUSCADOR</header>
+        <div id="status-red">Verificando conexión...</div>
+        
+        <div class="card" style="margin-bottom:5px;">
+            <input type="text" id="busqueda" placeholder="Buscar destino (ej. Aviación)..." oninput="filtrar(this.value)">
+            <button id="mic-btn" onclick="iniciarVoz()">🎤</button>
+            <p style="text-align:center; font-size:12px; color:#666; margin:0;">Toca el micro para dictar por voz</p>
         </div>
-
-        <nav class="nav-bar">
-            <div class="nav-item" onclick="showTab('search')"><span>🔍</span>BUSCAR</div>
-            <div id="admin-nav" class="nav-item hidden" onclick="showTab('admin')"><span>⚙️</span>ADMIN</div>
-            <div class="nav-item" onclick="location.reload()"><span>❌</span>SALIR</div>
-        </nav>
+        <div id="resultados"></div>
     </div>
 
 <script>
-    // CONFIGURACIÓN DE NUBE (RELLENA ESTO)
-    const CONFIG = {
-        token: "TU_TOKEN_AQUÍ",
-        user: "TU_USUARIO_GITHUB",
-        repo: "TU_REPOSITORIO",
-        path: "datos.json"
+    // CONFIGURACIÓN DE TU PROYECTO FIREBASE
+    const firebaseConfig = {
+        apiKey: "AIzaSyDKdDduhDRFsdNOiAejQBxxKN-HLv_Jd0A",
+        authDomain: "otimac-277ef.firebaseapp.com",
+        databaseURL: "https://otimac-277ef-default-rtdb.firebaseio.com",
+        projectId: "otimac-277ef",
+        storageBucket: "otimac-277ef.firebasestorage.app",
+        messagingSenderId: "20000838532",
+        appId: "1:20000838532:web:5f5c2d76abd78d7f2a03d1",
+        measurementId: "G-W6DN1JD9NJ"
     };
 
-    let NUBE_DATA = { usuarios: [], rutas: [] };
-    const VOZ_FIX = {"crusto": "cruzto", "tlahui": "tlahuitepec"};
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
 
-    async function fetchData() {
-        const url = `https://api.github.com/repos/${CONFIG.user}/${CONFIG.repo}/contents/${CONFIG.path}`;
-        try {
-            const res = await fetch(url, { headers: { "Authorization": `token ${CONFIG.token}` } });
-            const json = await res.json();
-            NUBE_DATA = JSON.parse(atob(json.content));
-            NUBE_DATA.sha = json.sha;
-            return true;
-        } catch (e) { return false; }
+    // Cargar memoria local al iniciar
+    let DATOS_LOCALES = JSON.parse(localStorage.getItem('otimac_local_db') || '{"rutas":{}, "usuarios":{}}');
+
+    // CONTROL DE RED (OFFLINE/ONLINE)
+    function monitorearRed() {
+        const status = document.getElementById('status-red');
+        const btnVoz = document.getElementById('mic-btn');
+        if (navigator.onLine) {
+            status.innerText = "● CONECTADO - DATOS SINCRONIZADOS";
+            status.style.color = "green";
+            btnVoz.disabled = false;
+        } else {
+            status.innerText = "○ MODO OFFLINE - USANDO MEMORIA LOCAL";
+            status.style.color = "#e65100";
+            btnVoz.disabled = true;
+        }
     }
+    window.addEventListener('online', monitorearRed);
+    window.addEventListener('offline', monitorearRed);
 
-    async function updateData() {
-        const url = `https://api.github.com/repos/${CONFIG.user}/${CONFIG.repo}/contents/${CONFIG.path}`;
-        const content = btoa(JSON.stringify(NUBE_DATA, null, 2));
-        await fetch(url, {
-            method: "PUT",
-            headers: { "Authorization": `token ${CONFIG.token}`, "Content-Type": "application/json" },
-            body: JSON.stringify({ message: "Update OTIMAC", content: content, sha: NUBE_DATA.sha })
-        });
-        await fetchData(); // Recargar SHA y datos
-        renderAdmin();
-    }
+    // ESCUCHAR CAMBIOS EN LA NUBE Y GUARDARLOS EN EL CELULAR
+    db.ref('/').on('value', (snap) => {
+        const data = snap.val();
+        if (data) {
+            DATOS_LOCALES = data;
+            localStorage.setItem('otimac_local_db', JSON.stringify(data));
+            console.log("Base de datos local actualizada");
+        }
+    });
 
-    async function validar() {
-        document.getElementById('login-status').innerText = "Verificando Nube...";
-        const ok = await fetchData();
-        if(!ok) { alert("Error de conexión a GitHub"); return; }
+    // LOGIN
+    function login() {
+        const uInput = document.getElementById('user').value.toLowerCase().trim();
+        const pInput = document.getElementById('pin').value.trim();
+        
+        const usuariosValidos = Object.values(DATOS_LOCALES.usuarios || {});
+        
+        // Acceso maestro warclib o usuarios en base de datos
+        const esAdmin = (uInput === "warclib" && pInput === "0000");
+        const esUsuario = usuariosValidos.find(x => x.u === uInput && x.p === pInput);
 
-        const u = document.getElementById('user').value.toLowerCase().trim();
-        const p = document.getElementById('pin').value.trim();
-        const auth = NUBE_DATA.usuarios.find(x => x.u === u && x.p === p);
-
-        if(auth) {
+        if (esAdmin || esUsuario) {
             document.getElementById('login-screen').classList.add('hidden');
             document.getElementById('app').classList.remove('hidden');
-            if(auth.r === 'admin') document.getElementById('admin-nav').classList.remove('hidden');
-        } else alert("Bloqueado o datos incorrectos.");
-    }
-
-    function ejecutarFiltro(val) {
-        const container = document.getElementById('lista-resultados');
-        container.innerHTML = "";
-        let t = val.toLowerCase().trim();
-        for (let key in VOZ_FIX) if(t.includes(key)) t = t.replace(key, VOZ_FIX[key]);
-        if(t.length < 2) return;
-
-        NUBE_DATA.rutas.filter(r => r[0].toLowerCase().includes(t)).forEach(item => {
-            container.innerHTML += `<div class="res-card"><span class="dest-name">${item[0]}</span><span class="price-text">${item[1]}</span></div>`;
-        });
-    }
-
-    async function gestionarNube(accion, id = null) {
-        if(accion === 'user-add') {
-            NUBE_DATA.usuarios.push({ u: document.getElementById('new-u-name').value.toLowerCase(), p: document.getElementById('new-u-pin').value, r: 'user' });
-        } else if(accion === 'user-del') {
-            NUBE_DATA.usuarios.splice(id, 1);
-        } else if(accion === 'route-add') {
-            const d = document.getElementById('new-r-dest').value.toUpperCase();
-            const p = document.getElementById('new-r-price').value;
-            const idx = NUBE_DATA.rutas.findIndex(r => r[0] === d);
-            if(idx > -1) NUBE_DATA.rutas[idx][1] = p; else NUBE_DATA.rutas.unshift([d, p]);
+            monitorearRed();
+            filtrar(''); // Carga todas las rutas al inicio
+        } else {
+            alert("Acceso denegado. Verifica tu usuario/PIN o conéctate a internet para actualizar la lista blanca.");
         }
-        await updateData();
-        alert("Nube Actualizada");
     }
 
-    function renderAdmin() {
-        const ui = document.getElementById('users-list-ui');
-        ui.innerHTML = "";
-        NUBE_DATA.usuarios.forEach((u, i) => {
-            if(u.r !== 'admin') ui.innerHTML += `<div class="user-row"><span>${u.u}</span><button onclick="gestionarNube('user-del', ${i})">❌</button></div>`;
+    // BUSCADOR INTELIGENTE (100% OFFLINE)
+    function filtrar(termino) {
+        const t = termino.toLowerCase().trim();
+        const container = document.getElementById('resultados');
+        container.innerHTML = "";
+        
+        const rutas = Object.values(DATOS_LOCALES.rutas || {});
+        
+        const filtradas = rutas.filter(r => 
+            r.d.toLowerCase().includes(t)
+        );
+
+        if (filtradas.length === 0) {
+            container.innerHTML = "<p style='text-align:center; color:#999;'>No se encontró el destino...</p>";
+            return;
+        }
+
+        filtradas.forEach(r => {
+            container.innerHTML += `
+                <div class="res-item">
+                    <span>${r.d}</span>
+                    <span class="price">${r.p}</span>
+                </div>`;
         });
     }
 
-    function showTab(tab) {
-        document.getElementById('view-search').classList.toggle('hidden', tab !== 'search');
-        document.getElementById('view-admin').classList.toggle('hidden', tab !== 'admin');
-        if(tab === 'admin') renderAdmin();
-    }
-
+    // FUNCIÓN DE VOZ
     function iniciarVoz() {
-        const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        rec.lang = 'es-MX';
-        rec.onresult = (e) => { 
-            const v = e.results[0][0].transcript; 
-            document.getElementById('manual-input').value = v; 
-            ejecutarFiltro(v); 
+        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+        recognition.lang = 'es-MX';
+        recognition.start();
+
+        document.getElementById('mic-btn').style.background = "#4CAF50";
+
+        recognition.onresult = (event) => {
+            const texto = event.results[0][0].transcript;
+            document.getElementById('busqueda').value = texto;
+            filtrar(texto);
+            document.getElementById('mic-btn').style.background = "#d32f2f";
         };
-        rec.start();
+
+        recognition.onerror = () => {
+            document.getElementById('mic-btn').style.background = "#d32f2f";
+            alert("Error al escuchar. Intenta de nuevo.");
+        };
     }
 </script>
 </body>
